@@ -39,7 +39,7 @@ def createLSATDatasets():
 
 
 def main():
-    createSyntheticData(10000)
+    createSyntheticData(50000)
     createLSATDatasets()
 
 if __name__ == '__main__':
