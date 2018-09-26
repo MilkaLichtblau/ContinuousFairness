@@ -13,117 +13,136 @@ excluding for now: region-first, sander-index, first_pf
 
 höchste ID: 27476
 
-Aufteilung in Trainings und Testdaten, 80% Training, 20% Testing, Random Sampling
 '''
 
 import pandas as pd
 from scipy.stats import stats
 
-CREATE_DATASETS = 0
-PATH_TO_DATAFILE = '../../data/law_data.csv.xlsx'
+class LSATCreator():
+
+    @property
+    def dataset(self):
+        return self.__dataset
 
 
-def prepareGenderData():
-    data = pd.read_excel(PATH_TO_DATAFILE)
-    data = data.drop(columns=['region_first', 'sander_index', 'first_pf', 'race'])
-
-    data['sex'] = data['sex'].replace([2], 0)
-
-    print(data['sex'].value_counts())
-
-    data['LSAT'] = stats.zscore(data['LSAT'])
-    data['UGPA'] = stats.zscore(data['UGPA'])
-
-    data = data[['sex', 'LSAT', 'UGPA', 'ZFYA']]
-    return data
+    @property
+    def groups(self):
+        return self.__groups
 
 
-def prepareOneRaceData(protGroup, nonprotGroup):
-    data = pd.read_excel('../../data/law_data.csv.xlsx')
-    data = data.drop(columns=['region_first', 'sander_index', 'first_pf', 'sex'])
-
-    data['race'] = data['race'].replace(to_replace=protGroup, value=1)
-    data['race'] = data['race'].replace(to_replace=nonprotGroup, value=0)
-
-    data = data[data['race'].isin([0, 1])]
-
-    print(data['race'].value_counts())
+    def __init__(self, pathToDataFile):
+        self.__origDataset = pd.read_excel(pathToDataFile)
 
 
-    data['LSAT'] = stats.zscore(data['LSAT'])
-    data['UGPA'] = stats.zscore(data['UGPA'])
+    def prepareGenderData(self):
+        data = self.__origDataset.drop(columns=['region_first', 'sander_index', 'first_pf', 'race'])
 
-    data = data[['race', 'LSAT', 'UGPA', 'ZFYA']]
+        data['sex'] = data['sex'].replace([2], 0)
 
-    data = data.sort_values(by=['ZFYA'], ascending=False)
-    return data
+        print(data['sex'].value_counts())
 
+        data['LSAT'] = stats.zscore(data['LSAT'])
+        data['UGPA'] = stats.zscore(data['UGPA'])
 
-def prepareAllRaceData():
-    data = pd.read_excel('../../data/law_data.csv.xlsx')
-    data = data.drop(columns=['region_first', 'sander_index', 'first_pf', 'sex'])
-
-    data['race'] = data['race'].replace(to_replace="White", value=0)
-    data['race'] = data['race'].replace(to_replace="Amerindian", value=1)
-    data['race'] = data['race'].replace(to_replace="Asian", value=2)
-    data['race'] = data['race'].replace(to_replace="Black", value=3)
-    data['race'] = data['race'].replace(to_replace="Hispanic", value=4)
-    data['race'] = data['race'].replace(to_replace="Mexican", value=5)
-    data['race'] = data['race'].replace(to_replace="Other", value=6)
-    data['race'] = data['race'].replace(to_replace="Puertorican", value=7)
-
-    data['LSAT'] = stats.zscore(data['LSAT'])
-    data['UGPA'] = stats.zscore(data['UGPA'])
-
-    data = data[['race', 'LSAT', 'UGPA', 'ZFYA']]
-
-    return data
+        data = data[['sex', 'LSAT', 'UGPA', 'ZFYA']]
+        self.__groups = pd.DataFrame({"sex": [0, 1]})
+        self.__dataset = data
 
 
-def prepareAllInOneData():
-    data = pd.read_excel('../../data/law_data.csv.xlsx')
-    data = data.drop(columns=['region_first', 'sander_index', 'first_pf'])
+    def prepareOneRaceData(self, protGroup, nonprotGroup):
+        data = self.__origDataset.drop(columns=['region_first', 'sander_index', 'first_pf', 'sex'])
 
-    data['sex'] = data['sex'].replace([2], 0)
+        data['race'] = data['race'].replace(to_replace=protGroup, value=1)
+        data['race'] = data['race'].replace(to_replace=nonprotGroup, value=0)
 
-    data['race'] = data['race'].replace(to_replace="White", value=0)
-    data['race'] = data['race'].replace(to_replace="Amerindian", value=1)
-    data['race'] = data['race'].replace(to_replace="Asian", value=2)
-    data['race'] = data['race'].replace(to_replace="Black", value=3)
-    data['race'] = data['race'].replace(to_replace="Hispanic", value=4)
-    data['race'] = data['race'].replace(to_replace="Mexican", value=5)
-    data['race'] = data['race'].replace(to_replace="Other", value=6)
-    data['race'] = data['race'].replace(to_replace="Puertorican", value=7)
+        data = data[data['race'].isin([0, 1])]
 
-    data['LSAT'] = stats.zscore(data['LSAT'])
-    data['UGPA'] = stats.zscore(data['UGPA'])
-
-    data = data[['sex', 'race', 'LSAT', 'UGPA', 'ZFYA']]
-
-    return data
+        print(data['race'].value_counts())
 
 
-if CREATE_DATASETS:
-    ######################################################################################
-    # GENDER
-    ######################################################################################
-    data = prepareGenderData()
+        data['LSAT'] = stats.zscore(data['LSAT'])
+        data['UGPA'] = stats.zscore(data['UGPA'])
 
-    ######################################################################################
-    # RACE
-    ######################################################################################
+        data = data[['race', 'LSAT', 'UGPA', 'ZFYA']]
 
-    data = prepareRaceData('Asian', 'White')
-    data = prepareRaceData('Black', 'White')
-    data = prepareRaceData('Hispanic', 'White')
-    data = prepareRaceData('Mexican', 'White')
-    data = prepareRaceData('Puertorican', 'White')
+        data = data.sort_values(by=['ZFYA'], ascending=False)
+        self.__groups = pd.DataFrame({"race": [0, 1]})
+        self.__dataset = data
 
-    #######################################################################################
-    # ALL IN ONE
-    #######################################################################################
 
-    data = prepareAllInOneData()
+    def prepareAllRaceData(self):
+        data = self.__origDataset.drop(columns=['region_first', 'sander_index', 'first_pf', 'sex'])
+
+        data['race'] = data['race'].replace(to_replace="White", value=0)
+        data['race'] = data['race'].replace(to_replace="Amerindian", value=1)
+        data['race'] = data['race'].replace(to_replace="Asian", value=2)
+        data['race'] = data['race'].replace(to_replace="Black", value=3)
+        data['race'] = data['race'].replace(to_replace="Hispanic", value=4)
+        data['race'] = data['race'].replace(to_replace="Mexican", value=5)
+        data['race'] = data['race'].replace(to_replace="Other", value=6)
+        data['race'] = data['race'].replace(to_replace="Puertorican", value=7)
+
+        data['LSAT'] = stats.zscore(data['LSAT'])
+        data['UGPA'] = stats.zscore(data['UGPA'])
+
+        data = data[['race', 'LSAT', 'UGPA', 'ZFYA']]
+        self.__groups = pd.DataFrame({"race": [0, 1, 2, 3, 4, 5, 6, 7]})
+        self.__dataset = data
+
+
+    def prepareAllInOneData(self):
+        data = self.__origDataset.drop(columns=['region_first', 'sander_index', 'first_pf'])
+
+        data['sex'] = data['sex'].replace([2], 0)
+
+        data['race'] = data['race'].replace(to_replace="White", value=0)
+        data['race'] = data['race'].replace(to_replace="Amerindian", value=1)
+        data['race'] = data['race'].replace(to_replace="Asian", value=2)
+        data['race'] = data['race'].replace(to_replace="Black", value=3)
+        data['race'] = data['race'].replace(to_replace="Hispanic", value=4)
+        data['race'] = data['race'].replace(to_replace="Mexican", value=5)
+        data['race'] = data['race'].replace(to_replace="Other", value=6)
+        data['race'] = data['race'].replace(to_replace="Puertorican", value=7)
+
+        data['LSAT'] = stats.zscore(data['LSAT'])
+        data['UGPA'] = stats.zscore(data['UGPA'])
+
+        data = data[['sex', 'race', 'LSAT', 'UGPA', 'ZFYA']]
+        race = pd.Series([0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7],
+                              index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                              name='race')
+        sex = pd.Series([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+                              index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                              name='sex')
+        self.__groups = pd.concat([sex, race], axis=1)
+        self.__dataset = data
+
+
+    def writeToCSV(self, path):
+        self.__dataset.to_csv(path, index=False, header=False)
+
+
+# if CREATE_DATASETS:
+#     ######################################################################################
+#     # GENDER
+#     ######################################################################################
+#     data = prepareGenderData()
+#
+#     ######################################################################################
+#     # RACE
+#     ######################################################################################
+#
+#     data = prepareOneRaceData('Asian', 'White')
+#     data = prepareOneRaceData('Black', 'White')
+#     data = prepareOneRaceData('Hispanic', 'White')
+#     data = prepareOneRaceData('Mexican', 'White')
+#     data = prepareOneRaceData('Puertorican', 'White')
+#
+#     #######################################################################################
+#     # ALL IN ONE
+#     #######################################################################################
+#
+#     data = prepareAllInOneData()
 
 
 
