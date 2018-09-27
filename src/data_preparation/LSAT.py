@@ -118,8 +118,9 @@ class LSATCreator():
         self.__dataset = data
 
 
-    def writeToCSV(self, path):
-        self.__dataset.to_csv(path, index=False, header=False)
+    def writeToCSV(self, pathToDataset, pathToGroups):
+        self.__dataset.to_csv(pathToDataset, index=False, header=True)
+        self.__groups.to_csv(pathToGroups, index=False, header=True)
 
 
 # if CREATE_DATASETS:
