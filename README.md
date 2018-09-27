@@ -8,6 +8,6 @@ Python Optimal Transport : https://github.com/rflamary/POT/tree/81b2796226f3abde
 ## Usage
 Create datasets (can LSAT be publicly available? Ask Chato)
 
-run algorithm on existing datasets
+run algorithm on existing datasets (say that one needs a group description as CSV file)
 
 visualize data and results
