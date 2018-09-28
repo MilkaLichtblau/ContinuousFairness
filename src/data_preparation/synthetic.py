@@ -176,6 +176,9 @@ class SyntheticDatasetCreator(object):
 
     def __createCategoricalProtectedAttributes(self, attributeNamesAndCategories, size):
         """
+        creates columns with manifestations of protected attributes from attributeNamesAndCategories
+        e.g. creates a column "gender" containing 0s and 1s for each item in the dataset
+
         @param attributeNamesAndCategories:         a dictionary that contains the names of the
                                                     protected attributes as keys and the number of
                                                     categories as values

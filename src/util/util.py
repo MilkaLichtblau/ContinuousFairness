@@ -16,6 +16,7 @@ def scoresByGroups(data, groups, qual_attr):
                                    of protected attributes, hence represents a group
                                    example: [(white, male), (white, female), (hispanic, male), (hispanic, female)]
     @param qual_attr:              name of column that contains the quality attribute (only one possible)
+
     @return: dataframe with group labels as column names and scores per group as column values
     """
     protectedAttributes = groups.columns.values
