@@ -27,5 +27,6 @@ def scoresByGroups(data, groups, qual_attr):
         for prot_attr in protectedAttributes:
             scoresPerGroup = scoresPerGroup.loc[(scoresPerGroup[prot_attr] == group.get(prot_attr))]
         scoresPerGroup = scoresPerGroup.reset_index(drop=True)
+        result = result.reset_index(drop=True)
         result[colName] = scoresPerGroup[qual_attr]
     return result

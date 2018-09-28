@@ -4,8 +4,13 @@ Created on Sep 25, 2018
 @author: meike.zehlike
 '''
 
+import pandas as pd
+
 from data_preparation import *
 from visualization.plots import plotKDEPerGroup
+from util.util import scoresByGroups
+from cfa import cfa
+
 
 
 def createSyntheticData(size):
@@ -38,9 +43,27 @@ def createLSATDatasets():
     plotKDEPerGroup(creator.dataset, creator.groups, 'ZFYA', '../data/LSAT/gender/scoreDistributionPerGroup_Gender_ZFYA', '')
 
 
+
+def rerank_with_cfa(pathToData, pathToGroups, qual_attr):
+    data = pd.read_csv(pathToData, sep=',')
+    groups = pd.read_csv(pathToGroups, sep=',')
+    thetas = [1, 1, 1, 1, 1, 1]
+
+    scoresPerGroup = scoresByGroups(data, groups, qual_attr)
+    cfa.continuousFairnessAlgorithm(scoresPerGroup, thetas)
+
+
 def main():
-    createSyntheticData(50000)
-    createLSATDatasets()
+    # TODO: make size command line argument
+#     createSyntheticData(50000)
+#     createLSATDatasets()
+
+    rerank_with_cfa('../data/synthetic/dataset.csv', '../data/synthetic/groups.csv', 'score')
+
+    # TODO: make paths command line argument, also make protected and non-protected attributes command line arguments
+
+
+
 
 if __name__ == '__main__':
     main()
