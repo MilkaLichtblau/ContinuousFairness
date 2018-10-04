@@ -46,11 +46,14 @@ def createLSATDatasets():
 
 def rerank_with_cfa(pathToData, pathToGroups, qual_attr):
     data = pd.read_csv(pathToData, sep=',')
+    print(data.shape)
     groups = pd.read_csv(pathToGroups, sep=',')
     thetas = [1, 1, 1, 1, 1, 1]
+    regForOT = 1e-3
 
+    # TODO: irgendwo in scoresByGroups gehen Datenpunkte verloren, scoresPerGroup ist kleiner als data
     scoresPerGroup = scoresByGroups(data, groups, qual_attr)
-    cfa.continuousFairnessAlgorithm(scoresPerGroup, thetas)
+    cfa.continuousFairnessAlgorithm(scoresPerGroup, thetas, regForOT, 50, path='../data/synthetic/', plot=True)
 
 
 def main():

@@ -123,28 +123,6 @@ class LSATCreator():
         self.__groups.to_csv(pathToGroups, index=False, header=True)
 
 
-# if CREATE_DATASETS:
-#     ######################################################################################
-#     # GENDER
-#     ######################################################################################
-#     data = prepareGenderData()
-#
-#     ######################################################################################
-#     # RACE
-#     ######################################################################################
-#
-#     data = prepareOneRaceData('Asian', 'White')
-#     data = prepareOneRaceData('Black', 'White')
-#     data = prepareOneRaceData('Hispanic', 'White')
-#     data = prepareOneRaceData('Mexican', 'White')
-#     data = prepareOneRaceData('Puertorican', 'White')
-#
-#     #######################################################################################
-#     # ALL IN ONE
-#     #######################################################################################
-#
-#     data = prepareAllInOneData()
-
 
 
 
