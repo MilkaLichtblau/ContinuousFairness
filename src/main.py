@@ -47,7 +47,6 @@ def rerank_with_cfa(thetas, pathToData, pathToGroups, qual_attr):
     groups = pd.read_csv(pathToGroups, sep=',')
     regForOT = 1e-3
 
-    # TODO: irgendwo in scoresByGroups gehen Datenpunkte verloren, scoresPerGroup ist kleiner als data
     scoresPerGroup = scoresByGroups(data, groups, qual_attr)
     cfa.continuousFairnessAlgorithm(scoresPerGroup, thetas, regForOT, 50, path='../data/synthetic/', plot=True)
 
