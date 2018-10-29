@@ -12,7 +12,6 @@ from util.util import scoresByGroups
 from cfa import cfa
 
 
-
 def createSyntheticData(size):
     nonProtectedAttributes = ['score']
     protectedAttributes = {"gender": 2, "ethnicity": 3}
@@ -43,12 +42,9 @@ def createLSATDatasets():
     plotKDEPerGroup(creator.dataset, creator.groups, 'ZFYA', '../data/LSAT/gender/scoreDistributionPerGroup_Gender_ZFYA', '')
 
 
-
-def rerank_with_cfa(pathToData, pathToGroups, qual_attr):
+def rerank_with_cfa(thetas, pathToData, pathToGroups, qual_attr):
     data = pd.read_csv(pathToData, sep=',')
-    print(data.shape)
     groups = pd.read_csv(pathToGroups, sep=',')
-    thetas = [1, 1, 1, 1, 1, 1]
     regForOT = 1e-3
 
     # TODO: irgendwo in scoresByGroups gehen Datenpunkte verloren, scoresPerGroup ist kleiner als data
@@ -57,15 +53,14 @@ def rerank_with_cfa(pathToData, pathToGroups, qual_attr):
 
 
 def main():
-    # TODO: make size command line argument
 #     createSyntheticData(50000)
 #     createLSATDatasets()
+    # TODO: make thetas and paths command line arguments
 
-    rerank_with_cfa('../data/synthetic/dataset.csv', '../data/synthetic/groups.csv', 'score')
+    thetas = [1, 1, 1, 1, 1, 1]
+    rerank_with_cfa(thetas, '../data/synthetic/dataset.csv', '../data/synthetic/groups.csv', 'score')
 
     # TODO: make paths command line argument, also make protected and non-protected attributes command line arguments
-
-
 
 
 if __name__ == '__main__':

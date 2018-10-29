@@ -11,15 +11,18 @@ import math
 import matplotlib.pyplot as plt
 from scipy import stats
 
+
 def continuousFairnessAlgorithm(data, thetas, regForOT, shape_bins, path='.', plot=False):
     """
-    @param data:     pandas dataframe with scores per group, groups do not necessarily have same
-                     amount of scores, i.e. data might contain NaNs
-    @param thetas:   vector of parameters that determine how close a distribution is to be moved to
-                     the general barycenter of all score distributions. One theta per group.
-                     theta of 1 means that a group distribution is totally moved into the general barycenter
-                     theta of 0 means that a group distribution stays exactly as it is
-    @param shape_bins: divisor for the bin size in the histogram that is calculated for each data column
+    @param data:         pandas dataframe with scores per group, groups do not necessarily have same
+                         amount of scores, i.e. data might contain NaNs
+    @param thetas:       vector of parameters that determine how close a distribution is to be moved to
+                         the general barycenter. One theta per group.
+                         theta of 1 means that a group distribution is totally moved into the general
+                         barycenter
+                         theta of 0 means that a group distribution stays exactly as it is
+    @param regForOT:     regularization parameter for optimal transport, see ot docs for details
+    @param shape_bins:   divisor for the bin size in the histogram that is calculated for each data column
     """
 
     print(data.shape)
@@ -32,7 +35,6 @@ def continuousFairnessAlgorithm(data, thetas, regForOT, shape_bins, path='.', pl
     if plot:
         normalizedData.plot(kind='line')
         plt.savefig(path + 'rawData_normalized', dpi=100, bbox_inches='tight')
-
 
     # calculate numbers of bins by largest group and devide by shape_bins, round up to have at least one
     num_bins = math.ceil(data.shape[0] / shape_bins)
@@ -52,7 +54,7 @@ def continuousFairnessAlgorithm(data, thetas, regForOT, shape_bins, path='.', pl
     if plot:
         ax = dataAsHistograms.plot(kind='line', use_index=False)
         ax.set_xticklabels(np.around(bin_edges[1:], decimals=2))
-        plt.savefig(path + 'dataAsHistograms', dpi=100, bbox_inches='tight')
+        plt.savefig(path + 'dataAsHistograms.png', dpi=100, bbox_inches='tight')
 
     # loss matrix + normalization
     loss_matrix = ot.utils.dist0(num_bins)
@@ -65,4 +67,20 @@ def continuousFairnessAlgorithm(data, thetas, regForOT, shape_bins, path='.', pl
         baryFrame.plot()
         plt.savefig(path + 'totalBarycenter.png', dpi=100, bbox_inches='tight')
 
+    # compute barycenters between general barycenter and each score distribution (i.e. each social group)
+    group_barycenters = pd.DataFrame(columns=dataAsHistograms.columns.values.tolist())
+    for groupName in dataAsHistograms:
+        # build 2-column matrix from group data and general barycenter
+        groupMatrix = pd.concat([dataAsHistograms[groupName], pd.Series(total_bary)], axis=1)
+        # get corresponding theta
+        theta = thetas[dataAsHistograms.columns.get_loc(groupName)]
+        # calculate barycenters
+        weights = np.array([1 - theta, theta])
+        group_barycenters[groupName] = ot.bregman.barycenter(groupMatrix, loss_matrix, regForOT,
+                                                             weights=weights, verbose=True, log=True)[0]
+
+    if plot:
+        ax = group_barycenters.plot(kind='line', use_index=False)
+        # ax.set_xticklabels(np.around(bin_edges[1:], decimals=2))
+        plt.savefig(path + 'groupBarycenters.png', dpi=100, bbox_inches='tight')
 
