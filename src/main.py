@@ -5,11 +5,14 @@ Created on Sep 25, 2018
 '''
 
 import pandas as pd
+import numpy as np
+import argparse
 
 from data_preparation import *
 from visualization.plots import plotKDEPerGroup
 from util.util import scoresByGroups
 from cfa import cfa
+from argparse import ArgumentError
 
 
 def createSyntheticData(size):
@@ -45,22 +48,73 @@ def createLSATDatasets():
 def rerank_with_cfa(thetas, pathToData, pathToGroups, qual_attr):
     data = pd.read_csv(pathToData, sep=',')
     groups = pd.read_csv(pathToGroups, sep=',')
-    regForOT = 1e-4
+
+    # check that we have a theta for each group
+    if groups.shape[0] != len(thetas):
+        raise ArgumentError("invalid number of thetas. Specify one theta per group.")
+
+    regForOT = 1e-3
 
     scoresPerGroup = scoresByGroups(data, groups, qual_attr)
     groupSizes = scoresPerGroup.count().divide(data.shape[0])
     cfa.continuousFairnessAlgorithm(scoresPerGroup, groupSizes, thetas, regForOT, 100, path='../data/synthetic/', plot=True)
 
 
+def parseThetas(thetaString):
+    thetas = np.array(thetaString.split(";"))
+    floatThetas = [float(i) for i in thetas]
+    return floatThetas
+
+
 def main():
-#     createSyntheticData(50000)
-#     createLSATDatasets()
-    # TODO: make thetas and paths command line arguments
+    # parse command line options
+    parser = argparse.ArgumentParser(prog='Continuous Fairness Algorithm',
+                                     epilog="=== === === end === === ===")
+    subparser = parser.add_subparsers(help='sub-command help')
 
-    thetas = [1, 1, 1, 1, 1, 1]
-    rerank_with_cfa(thetas, '../data/synthetic/dataset.csv', '../data/synthetic/groups.csv', 'score')
+    parser.add_argument("--create",
+                        nargs=1,
+                        choices=['synthetic', 'lsat'],
+                        help="creates datasets from raw data and writes them to disk")
+    parser.add_argument("--run",
+                        nargs=2,
+                        metavar=('DATASET', 'THETAS'),
+                        help="runs continuous fairness algorithm for given dataset and thetas \n \
+                              first specify dataset then thetas")
 
-    # TODO: make paths command line argument, also make protected and non-protected attributes command line arguments
+    args = parser.parse_args()
+
+    if args.create == ['synthetic']:
+        createSyntheticData(50000)
+    elif args.create == ['lsat']:
+        createLSATDatasets()
+    elif args.run:
+        thetas = parseThetas(args.run[1])
+        if args.run[0] == 'synthetic':
+            rerank_with_cfa(thetas,
+                            '../data/synthetic/dataset.csv',
+                            '../data/synthetic/groups.csv',
+                            'score')
+        elif args.run[0] == 'LSAT_gender':
+            # TODO: run experiments also with ZFYA
+            rerank_with_cfa(thetas,
+                            '../data/LSAT/gender/genderLSAT.csv',
+                            '../data/LSAT/gender/genderGroups.csv',
+                            'LSAT')
+        elif args.run[0] == 'LSAT_race':
+            rerank_with_cfa(thetas,
+                            '../data/LSAT/allRace/allEthnicityLSAT.csv',
+                            '../data/LSAT/allRace/allEthnicityGroups.csv',
+                            'LSAT')
+        elif args.run[0] == 'LSAT_all':
+            rerank_with_cfa(thetas,
+                '../data/LSAT/all/allInOneLSAT.csv',
+                '../data/LSAT/all/allInOneGroups.csv',
+                'LSAT')
+        else:
+            parser.error("unknown dataset. Options are 'synthetic', 'LSAT_gender', 'LSAT_race, 'LSAT_all'")
+    else:
+        parser.error("choose one command line option")
 
 
 if __name__ == '__main__':
