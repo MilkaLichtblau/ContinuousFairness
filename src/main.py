@@ -45,7 +45,7 @@ def createLSATDatasets():
     plotKDEPerGroup(creator.dataset, creator.groups, 'ZFYA', '../data/LSAT/gender/scoreDistributionPerGroup_Gender_ZFYA', '')
 
 
-def rerank_with_cfa(thetas, pathToData, pathToGroups, qual_attr):
+def rerank_with_cfa(thetas, result_dir, pathToData, pathToGroups, qual_attr):
     data = pd.read_csv(pathToData, sep=',')
     groups = pd.read_csv(pathToGroups, sep=',')
 
@@ -57,11 +57,11 @@ def rerank_with_cfa(thetas, pathToData, pathToGroups, qual_attr):
 
     scoresPerGroup = scoresByGroups(data, groups, qual_attr)
     groupSizes = scoresPerGroup.count().divide(data.shape[0])
-    cfa.continuousFairnessAlgorithm(scoresPerGroup, groupSizes, thetas, regForOT, 100, path='../data/synthetic/', plot=True)
+    cfa.continuousFairnessAlgorithm(scoresPerGroup, groupSizes, thetas, regForOT, path=result_dir, plot=True)
 
 
 def parseThetas(thetaString):
-    thetas = np.array(thetaString.split(";"))
+    thetas = np.array(thetaString.split(","))
     floatThetas = [float(i) for i in thetas]
     return floatThetas
 
@@ -70,17 +70,22 @@ def main():
     # parse command line options
     parser = argparse.ArgumentParser(prog='Continuous Fairness Algorithm',
                                      epilog="=== === === end === === ===")
-    subparser = parser.add_subparsers(help='sub-command help')
 
     parser.add_argument("--create",
                         nargs=1,
                         choices=['synthetic', 'lsat'],
                         help="creates datasets from raw data and writes them to disk")
     parser.add_argument("--run",
-                        nargs=2,
-                        metavar=('DATASET', 'THETAS'),
-                        help="runs continuous fairness algorithm for given dataset and thetas \n \
-                              first specify dataset then thetas")
+                        nargs=3,
+                        metavar=('DATASET', 'THETAS', 'DIRECTORY'),
+                        help="runs continuous fairness algorithm for given DATASET and THETAS \n \
+                              and stores results into DIRECTORY")
+    parser.add_argument("--dir",
+                        nargs=1,
+                        type=str,
+                        default="../data/",
+                        metavar='DIRECTORY',
+                        help="specifies directory to store the results")
 
     args = parser.parse_args()
 
@@ -90,27 +95,32 @@ def main():
         createLSATDatasets()
     elif args.run:
         thetas = parseThetas(args.run[1])
+        result_dir = args.run[2]
         if args.run[0] == 'synthetic':
             rerank_with_cfa(thetas,
+                            result_dir,
                             '../data/synthetic/dataset.csv',
                             '../data/synthetic/groups.csv',
                             'score')
         elif args.run[0] == 'LSAT_gender':
             # TODO: run experiments also with ZFYA
             rerank_with_cfa(thetas,
+                            result_dir,
                             '../data/LSAT/gender/genderLSAT.csv',
                             '../data/LSAT/gender/genderGroups.csv',
                             'LSAT')
         elif args.run[0] == 'LSAT_race':
             rerank_with_cfa(thetas,
+                            result_dir,
                             '../data/LSAT/allRace/allEthnicityLSAT.csv',
                             '../data/LSAT/allRace/allEthnicityGroups.csv',
                             'LSAT')
         elif args.run[0] == 'LSAT_all':
             rerank_with_cfa(thetas,
-                '../data/LSAT/all/allInOneLSAT.csv',
-                '../data/LSAT/all/allInOneGroups.csv',
-                'LSAT')
+                            result_dir,
+                            '../data/LSAT/all/allInOneLSAT.csv',
+                            '../data/LSAT/all/allInOneGroups.csv',
+                            'LSAT')
         else:
             parser.error("unknown dataset. Options are 'synthetic', 'LSAT_gender', 'LSAT_race, 'LSAT_all'")
     else:
