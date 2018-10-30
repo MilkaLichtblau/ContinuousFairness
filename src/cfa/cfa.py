@@ -55,7 +55,7 @@ def continuousFairnessAlgorithm(data, groupSizePercent, thetas, regForOT, path='
     # compute general barycenter of all score distributions
     weights = groupSizePercent.values
     total_bary = ot.bregman.barycenter(dataAsHistograms, loss_matrix, regForOT,
-                                       # weights=groupSizePercent.values,
+                                       weights=groupSizePercent.values,
                                        verbose=True, log=True)[0]
     if plot:
         baryFrame = pd.DataFrame(total_bary)
