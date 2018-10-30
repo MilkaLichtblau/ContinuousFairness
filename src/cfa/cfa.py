@@ -12,10 +12,11 @@ import matplotlib.pyplot as plt
 from scipy import stats
 
 
-def continuousFairnessAlgorithm(data, thetas, regForOT, shape_bins, path='.', plot=False):
+def continuousFairnessAlgorithm(data, groupSizePercent, thetas, regForOT, shape_bins, path='.', plot=False):
     """
     @param data:         pandas dataframe with scores per group, groups do not necessarily have same
                          amount of scores, i.e. data might contain NaNs
+    @param groupSizePercent:  vector of proportions of items from each group in the total dataset
     @param thetas:       vector of parameters that determine how close a distribution is to be moved to
                          the general barycenter. One theta per group.
                          theta of 1 means that a group distribution is totally moved into the general
@@ -61,7 +62,8 @@ def continuousFairnessAlgorithm(data, thetas, regForOT, shape_bins, path='.', pl
     loss_matrix /= loss_matrix.max()
 
     # compute general barycenter of all score distributions
-    total_bary = ot.bregman.barycenter(dataAsHistograms, loss_matrix, regForOT, verbose=True, log=True)[0]
+    total_bary = ot.bregman.barycenter(dataAsHistograms, loss_matrix, regForOT, weights=groupSizePercent,
+                                       verbose=True, log=True)[0]
     if plot:
         baryFrame = pd.DataFrame(total_bary)
         baryFrame.plot()
