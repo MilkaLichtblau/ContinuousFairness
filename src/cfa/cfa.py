@@ -43,6 +43,9 @@ def continuousFairnessAlgorithm(data, groupSizePercent, thetas, regForOT, path='
         colAsHist = np.histogram(colNoNans[colName], bins=bin_edges, density=True)[0]
         dataAsHistograms[colName] = colAsHist
 
+    if dataAsHistograms.isnull().values.any():
+        raise ValueError("Histogram data contains nans")
+
     if plot:
         ax = dataAsHistograms.plot(kind='line', use_index=False)
         ax.set_xticklabels(np.around(bin_edges[1:], decimals=2))

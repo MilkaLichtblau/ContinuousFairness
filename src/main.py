@@ -90,7 +90,7 @@ def main():
     args = parser.parse_args()
 
     if args.create == ['synthetic']:
-        createSyntheticData(50000)
+        createSyntheticData(60000)
     elif args.create == ['lsat']:
         createLSATDatasets()
     elif args.run:
