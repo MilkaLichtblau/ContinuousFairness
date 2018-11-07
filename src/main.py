@@ -53,7 +53,7 @@ def rerank_with_cfa(thetas, result_dir, pathToData, pathToGroups, qual_attr):
     if groups.shape[0] != len(thetas):
         raise ArgumentError("invalid number of thetas. Specify one theta per group.")
 
-    regForOT = 1e-3
+    regForOT = 1e-2
 
     scoresPerGroup = scoresByGroups(data, groups, qual_attr)
     groupSizes = scoresPerGroup.count().divide(data.shape[0])
