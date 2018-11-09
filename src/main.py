@@ -19,7 +19,7 @@ def createSyntheticData(size):
     nonProtectedAttributes = ['score']
     protectedAttributes = {"gender": 2, "ethnicity": 3}
     creator = synthetic.SyntheticDatasetCreator(size, protectedAttributes, nonProtectedAttributes)
-    creator.createScoresNormalDistribution(nonProtectedAttributes)
+    creator.createTruncatedIntegerScoresNormallyDistributed(nonProtectedAttributes, 0, 100)
     creator.writeToCSV('../data/synthetic/dataset.csv', '../data/synthetic/groups.csv')
     plotKDEPerGroup(creator.dataset, creator.groups, 'score', '../data/synthetic/scoreDistributionPerGroup', '')
 
@@ -90,7 +90,7 @@ def main():
     args = parser.parse_args()
 
     if args.create == ['synthetic']:
-        createSyntheticData(60000)
+        createSyntheticData(100000)
     elif args.create == ['lsat']:
         createLSATDatasets()
     elif args.run:
