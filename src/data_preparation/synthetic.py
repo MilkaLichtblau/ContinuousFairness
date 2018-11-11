@@ -128,8 +128,8 @@ class SyntheticDatasetCreator(object):
             sigma = np.random.randint(low, upp)
 
             x[colName] = get_truncated_normal(mean=mu, sd=sigma, low=low, upp=upp, size=len(x))
-            x = x.round().astype(int)
-            return x
+            x = x.round()
+            return x.astype(int)
 
         for attr in nonProtectedAttributes:
             self.__dataset = self.__dataset.groupby(self.__dataset.columns.tolist(), as_index=False,

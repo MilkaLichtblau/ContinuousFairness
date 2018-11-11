@@ -21,7 +21,7 @@ def scoresByGroups(data, groups, qual_attr):
     @return: dataframe with group labels as column names and scores per group as column values
     """
     protectedAttributes = groups.columns.values
-    result = pd.DataFrame()
+    result = pd.DataFrame(dtype=int)
     # select all rows that belong to one group
     for idx, group in groups.iterrows():
         colName = str(group.values)

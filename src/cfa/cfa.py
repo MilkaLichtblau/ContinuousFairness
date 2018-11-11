@@ -14,6 +14,10 @@ from scipy import stats
 
 def continuousFairnessAlgorithm(data, groupSizePercent, thetas, regForOT, path='.', plot=False):
     """
+    TODO: write that algorithm assumes finite integer scores, so no floating scores are allowed
+    if scores are given as floats, they have to be represented somehow as integers first, otherwise
+    the algorithm doesn't work
+
     @param data:         pandas dataframe with scores per group, groups do not necessarily have same
                          amount of scores, i.e. data might contain NaNs
     @param groupSizePercent:  vector of proportions of items from each group in the total dataset
@@ -25,22 +29,16 @@ def continuousFairnessAlgorithm(data, groupSizePercent, thetas, regForOT, path='
     @param regForOT:     regularization parameter for optimal transport, see ot docs for details
     """
 
-    # calculate z score per column
-    norm_data = stats.zscore(data[~np.isnan(data)], axis=1)
-    normalizedData = pd.DataFrame(norm_data, columns=data.columns)
-
     # calculate general edges for column histograms
-    dataIn1D = normalizedData.values.flatten()
-#    dataIn1D = data.values.flatten()
-    oneDNoNans = dataIn1D[~np.isnan(dataIn1D)]
-    bin_edges = np.histogram_bin_edges(oneDNoNans, bins='auto')
-    num_bins = len(bin_edges[1:])
+    num_bins = int(data.max().max()) + 10
+    bin_edges = np.arange(num_bins + 1)  # len(bin_edges[1:])
     dataAsHistograms = pd.DataFrame()
 
     # get normalized histogram from each column and save to new dataframe
     for colName in data.columns:
-        colNoNans = pd.DataFrame(normalizedData[colName][~np.isnan(normalizedData[colName])])
+        colNoNans = pd.DataFrame(data[colName][~np.isnan(data[colName])])
         colAsHist = np.histogram(colNoNans[colName], bins=bin_edges, density=True)[0]
+#         colAsHist = np.histogram(colNoNans[colName], bins=num_bins, density=True)[0]
         dataAsHistograms[colName] = colAsHist
 
     if dataAsHistograms.isnull().values.any():
@@ -48,7 +46,7 @@ def continuousFairnessAlgorithm(data, groupSizePercent, thetas, regForOT, path='
 
     if plot:
         ax = dataAsHistograms.plot(kind='line', use_index=False)
-        ax.set_xticklabels(np.around(bin_edges[1:], decimals=2))
+        # ax.set_xticklabels(np.around(bin_edges[1:], decimals=2))
         plt.savefig(path + 'dataAsHistograms.png', dpi=100, bbox_inches='tight')
 
     # loss matrix + normalization
