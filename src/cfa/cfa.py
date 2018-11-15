@@ -7,20 +7,17 @@ Created on Sep 27, 2018
 import ot
 import numpy as np
 import pandas as pd
-import math
 import matplotlib.pyplot as plt
-from scipy import stats
 
 
-def continuousFairnessAlgorithm(data, groupSizePercent, thetas, regForOT, path='.', plot=False):
+def continuousFairnessAlgorithm(data, score_ranges, thetas, regForOT, path='.', plot=False):
     """
     TODO: write that algorithm assumes finite integer scores, so no floating scores are allowed
-    if scores are given as floats, they have to be represented somehow as integers first, otherwise
-    the algorithm doesn't work
+    and they have to be represented somehow as integers, otherwise the algorithm doesn't work
 
     @param data:         pandas dataframe with scores per group, groups do not necessarily have same
                          amount of scores, i.e. data might contain NaNs
-    @param groupSizePercent:  vector of proportions of items from each group in the total dataset
+    @param score_ranges: tuple that contains the lower and upper most possible score
     @param thetas:       vector of parameters that determine how close a distribution is to be moved to
                          the general barycenter. One theta per group.
                          theta of 1 means that a group distribution is totally moved into the general
@@ -29,24 +26,27 @@ def continuousFairnessAlgorithm(data, groupSizePercent, thetas, regForOT, path='
     @param regForOT:     regularization parameter for optimal transport, see ot docs for details
     """
 
+    # calculate group sizes in total and percent
+    groupSizes = data.count()
+    groupSizesPercent = data.count().divide(groupSizes.sum())
+
     # calculate general edges for column histograms
-    num_bins = int(data.max().max()) + 10
+    score_values = np.arange(score_ranges[0], score_ranges[1] + 1)
+    num_bins = int(score_values.max())
     bin_edges = np.arange(num_bins + 1)  # len(bin_edges[1:])
     dataAsHistograms = pd.DataFrame()
 
-    # get normalized histogram from each column and save to new dataframe
+    # get histogram from each column and save to new dataframe
     for colName in data.columns:
         colNoNans = pd.DataFrame(data[colName][~np.isnan(data[colName])])
         colAsHist = np.histogram(colNoNans[colName], bins=bin_edges, density=True)[0]
-#         colAsHist = np.histogram(colNoNans[colName], bins=num_bins, density=True)[0]
         dataAsHistograms[colName] = colAsHist
 
     if dataAsHistograms.isnull().values.any():
         raise ValueError("Histogram data contains nans")
 
     if plot:
-        ax = dataAsHistograms.plot(kind='line', use_index=False)
-        # ax.set_xticklabels(np.around(bin_edges[1:], decimals=2))
+        dataAsHistograms.plot(kind='line', use_index=False)
         plt.savefig(path + 'dataAsHistograms.png', dpi=100, bbox_inches='tight')
 
     # loss matrix + normalization
@@ -54,9 +54,9 @@ def continuousFairnessAlgorithm(data, groupSizePercent, thetas, regForOT, path='
     loss_matrix /= loss_matrix.max()
 
     # compute general barycenter of all score distributions
-    weights = groupSizePercent.values
+    weights = groupSizesPercent.values
     total_bary = ot.bregman.barycenter(dataAsHistograms, loss_matrix, regForOT,
-                                       weights=groupSizePercent.values,
+                                       weights=groupSizesPercent.values,
                                        verbose=True, log=True)[0]
     if plot:
         baryFrame = pd.DataFrame(total_bary)
@@ -76,7 +76,26 @@ def continuousFairnessAlgorithm(data, groupSizePercent, thetas, regForOT, path='
                                                              weights=weights, verbose=True, log=True)[0]
 
     if plot:
-        ax = group_barycenters.plot(kind='line', use_index=False)
-        # ax.set_xticklabels(np.around(bin_edges[1:], decimals=2))
+        group_barycenters.plot(kind='line', use_index=False)
         plt.savefig(path + 'groupBarycenters.png', dpi=100, bbox_inches='tight')
 
+    # calculate new scores from group barycenters
+    group_fair_scores = pd.DataFrame(columns=dataAsHistograms.columns.values.tolist())
+    for groupName in dataAsHistograms:
+        ot_matrix = ot.emd(dataAsHistograms[groupName],
+                           group_barycenters[groupName],
+                           loss_matrix)
+        # TODO: landet man damit auf jeden Fall im gleichen Score Range?
+        group_fair_scores[groupName] = np.matmul(ot_matrix, score_values.T)
+
+#         group_fair_scores[groupName] =
+    if plot:
+        group_fair_scores.plot(kind='line', use_index=False)
+        plt.savefig(path + 'fairScoresPerGroup.png', dpi=100, bbox_inches='tight')
+
+    data_fair_scores = pd.DataFrame(columns=data.columns.values.tolist())
+    for colName in data.columns:
+        colNoNans = pd.DataFrame(data[colName][~np.isnan(data[colName])])
+
+    # use stats.percentileofscore um herauszufinden, an welcher Stelle im Gruppenranking einer prozentual war
+    # packe ihn in das gleiche Percentile im Barycenter wieder hinein...
