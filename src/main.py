@@ -19,7 +19,7 @@ def createSyntheticData(size):
     nonProtectedAttributes = ['score']
     protectedAttributes = {"gender": 2, "ethnicity": 3}
     creator = synthetic.SyntheticDatasetCreator(size, protectedAttributes, nonProtectedAttributes)
-    creator.createTruncatedIntegerScoresNormallyDistributed(nonProtectedAttributes, 0, 100)
+    creator.createTruncatedIntegerScoresNormallyDistributed(1, 101)
     creator.writeToCSV('../data/synthetic/dataset.csv', '../data/synthetic/groups.csv')
     plotKDEPerGroup(creator.dataset, creator.groups, 'score', '../data/synthetic/scoreDistributionPerGroup', '')
 
@@ -45,7 +45,7 @@ def createLSATDatasets():
     plotKDEPerGroup(creator.dataset, creator.groups, 'ZFYA', '../data/LSAT/gender/scoreDistributionPerGroup_Gender_ZFYA', '')
 
 
-def rerank_with_cfa(thetas, result_dir, pathToData, pathToGroups, qual_attr):
+def rerank_with_cfa(score_ranges, thetas, result_dir, pathToData, pathToGroups, qual_attr):
     data = pd.read_csv(pathToData, sep=',')
     groups = pd.read_csv(pathToGroups, sep=',')
 
@@ -56,8 +56,13 @@ def rerank_with_cfa(thetas, result_dir, pathToData, pathToGroups, qual_attr):
     regForOT = 5e-3
 
     scoresPerGroup = scoresByGroups(data, groups, qual_attr)
-    groupSizes = scoresPerGroup.count().divide(data.shape[0])
-    cfa.continuousFairnessAlgorithm(scoresPerGroup, groupSizes, thetas, regForOT, path=result_dir, plot=True)
+    cfa.continuousFairnessAlgorithm(scoresPerGroup, score_ranges, thetas, regForOT, path=result_dir, plot=True)
+
+
+def parseScoreRanges(scoreString):
+    score_ranges = np.array(scoreString.split(","))
+    int_ranges = [int(i) for i in score_ranges]
+    return int_ranges
 
 
 def parseThetas(thetaString):
@@ -76,9 +81,9 @@ def main():
                         choices=['synthetic', 'lsat'],
                         help="creates datasets from raw data and writes them to disk")
     parser.add_argument("--run",
-                        nargs=3,
-                        metavar=('DATASET', 'THETAS', 'DIRECTORY'),
-                        help="runs continuous fairness algorithm for given DATASET and THETAS \n \
+                        nargs=4,
+                        metavar=('DATASET', 'SCORE RANGES', 'THETAS', 'DIRECTORY'),
+                        help="runs continuous fairness algorithm for given DATASET with SCORE RANGES and THETAS \n \
                               and stores results into DIRECTORY")
     parser.add_argument("--dir",
                         nargs=1,
@@ -94,10 +99,12 @@ def main():
     elif args.create == ['lsat']:
         createLSATDatasets()
     elif args.run:
-        thetas = parseThetas(args.run[1])
-        result_dir = args.run[2]
+        score_ranges = parseScoreRanges(args.run[1])
+        thetas = parseThetas(args.run[2])
+        result_dir = args.run[3]
         if args.run[0] == 'synthetic':
-            rerank_with_cfa(thetas,
+            rerank_with_cfa(score_ranges,
+                            thetas,
                             result_dir,
                             '../data/synthetic/dataset.csv',
                             '../data/synthetic/groups.csv',

@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import random
 import itertools
+import uuid
 from scipy.stats import truncnorm
 
 
@@ -71,17 +72,12 @@ class SyntheticDatasetCreator(object):
         self.__createCategoricalProtectedAttributes(attributeNamesAndCategories, size)
 
         # generate ID column
-        # self.__dataset['uuid'] = uuid.uuid4()
+        self.__dataset['uuid'] = [uuid.uuid4() for _ in range(len(self.__dataset.index))]
 
-    def createScoresNormalDistribution(self, nonProtectedAttributes):
+    def createScoresNormalDistribution(self):
         """
         @param nonProtectedAttributes:     a string array that contains the names of the non-protected
                                            features
-        @param mu:                         float array that contains means of the expected scores. Its
-                                           length should match the length of 'nonProtectedAttributes'
-        @param sigma:                      float array that contains standard deviations of the
-                                           expected scores. Its length should match the length of
-                                           'nonProtectedAttributes'
         """
 
 #         if len(mu_diff) != len(self.groups) or len(sigma) != len(self.groups):
@@ -93,17 +89,15 @@ class SyntheticDatasetCreator(object):
             x[colName] = np.random.normal(mu, sigma, size=len(x))
             return x
 
-        for attr in nonProtectedAttributes:
-            self.__dataset = self.__dataset.groupby(self.__dataset.columns.tolist(), as_index=False,
+        for attr in self.nonProtectedAttributes:
+            self.__dataset = self.__dataset.groupby(list(self.protectedAttributes), as_index=False,
                                                     sort=False).apply(score, colName=attr)
 
-    def createTruncatedIntegerScoresNormallyDistributed(self, nonProtectedAttributes, lower, upper):
+    def createTruncatedIntegerScoresNormallyDistributed(self, lower, upper):
         """
-        creates Integer scores for each social group and each name in nonProtectedAttributes in maximum ranges
+        creates Integer scores for each social group and each name in self.nonProtectedAttributes in maximum ranges
         of lower and upper
 
-        @param nonProtectedAttributes:     a string array that contains the names of the non-protected
-                                           qualifying features, e.g. scores or test results
         @param lower:                      total lower bound for generated scores
         @param upper:                      total upper bound for generated scores
         """
@@ -128,11 +122,11 @@ class SyntheticDatasetCreator(object):
             sigma = np.random.randint(low, upp)
 
             x[colName] = get_truncated_normal(mean=mu, sd=sigma, low=low, upp=upp, size=len(x))
-            x = x.round()
-            return x.astype(int)
+            x[colName] = x[colName].round().astype(int)
+            return x
 
-        for attr in nonProtectedAttributes:
-            self.__dataset = self.__dataset.groupby(self.__dataset.columns.tolist(), as_index=False,
+        for attr in self.nonProtectedAttributes:
+            self.__dataset = self.__dataset.groupby(list(self.protectedAttributes), as_index=False,
                                                     sort=False).apply(score, colName=attr)
 
     def createScoresUniformDistribution(self):
@@ -147,7 +141,7 @@ class SyntheticDatasetCreator(object):
             return x
 
         for attr in self.nonProtectedAttributes:
-            self.__dataset = self.__dataset.groupby(self.__dataset.columns.tolist(), as_index=False,
+            self.__dataset = self.__dataset.groupby(list(self.protectedAttributes), as_index=False,
                                                     sort=False).apply(score, (attr))
 
     def writeToCSV(self, pathToDataset, pathToGroups):
@@ -174,7 +168,6 @@ class SyntheticDatasetCreator(object):
             """
             @param size: expected size of the dataset
             """
-
             prot_data = pd.DataFrame()
             prot_data['gender'] = np.ones(int(size / 2)).astype(int)
             prot_data['score'] = np.random.normal(0.2, 0.3, size=int(size / 2))
@@ -224,7 +217,7 @@ class SyntheticDatasetCreator(object):
         for attributeName in self.__protectedAttributes:
             col = []
             categories = range(0, attributeNamesAndCategories[attributeName])
-            for count in range(0, size):
+            for _ in range(0, size):
                 col.append(random.choice(categories))
             newData[attributeName] = col
 
