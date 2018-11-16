@@ -13,6 +13,7 @@ from visualization.plots import plotKDEPerGroup
 from util.util import scoresByGroups
 from cfa import cfa
 from argparse import ArgumentError
+from cfa.cfa import ContinuousFairnessAlgorithm
 
 
 def createSyntheticData(size):
@@ -56,7 +57,8 @@ def rerank_with_cfa(score_ranges, thetas, result_dir, pathToData, pathToGroups, 
     regForOT = 5e-3
 
     scoresPerGroup = scoresByGroups(data, groups, qual_attr)
-    cfa.continuousFairnessAlgorithm(scoresPerGroup, score_ranges, thetas, regForOT, path=result_dir, plot=True)
+    cfa = ContinuousFairnessAlgorithm(scoresPerGroup, score_ranges, thetas, regForOT, path=result_dir, plot=True)
+    cfa.continuousFairnessAlgorithm()
 
 
 def parseScoreRanges(scoreString):
