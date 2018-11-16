@@ -46,7 +46,7 @@ def createLSATDatasets():
     plotKDEPerGroup(creator.dataset, creator.groups, 'ZFYA', '../data/LSAT/gender/scoreDistributionPerGroup_Gender_ZFYA', '')
 
 
-def rerank_with_cfa(score_ranges, thetas, result_dir, pathToData, pathToGroups, qual_attr):
+def rerank_with_cfa(score_ranges, score_stepsize, thetas, result_dir, pathToData, pathToGroups, qual_attr):
     data = pd.read_csv(pathToData, sep=',')
     groups = pd.read_csv(pathToGroups, sep=',')
 
@@ -57,7 +57,12 @@ def rerank_with_cfa(score_ranges, thetas, result_dir, pathToData, pathToGroups, 
     regForOT = 5e-3
 
     scoresPerGroup = scoresByGroups(data, groups, qual_attr)
-    cfa = ContinuousFairnessAlgorithm(scoresPerGroup, score_ranges, thetas, regForOT, path=result_dir, plot=True)
+    cfa = ContinuousFairnessAlgorithm(scoresPerGroup,
+                                      score_ranges,
+                                      score_stepsize,
+                                      thetas, regForOT,
+                                      path=result_dir,
+                                      plot=True)
     cfa.continuousFairnessAlgorithm()
 
 
@@ -83,10 +88,10 @@ def main():
                         choices=['synthetic', 'lsat'],
                         help="creates datasets from raw data and writes them to disk")
     parser.add_argument("--run",
-                        nargs=4,
-                        metavar=('DATASET', 'SCORE RANGES', 'THETAS', 'DIRECTORY'),
-                        help="runs continuous fairness algorithm for given DATASET with SCORE RANGES and THETAS \n \
-                              and stores results into DIRECTORY")
+                        nargs=5,
+                        metavar=('DATASET', 'SCORE RANGES', 'STEPSIZE', 'THETAS', 'DIRECTORY'),
+                        help="runs continuous fairness algorithm for given DATASET with SCORE RANGES \
+                              in STEPSIZE and THETAS and stores results into DIRECTORY")
     parser.add_argument("--dir",
                         nargs=1,
                         type=str,
@@ -102,10 +107,12 @@ def main():
         createLSATDatasets()
     elif args.run:
         score_ranges = parseScoreRanges(args.run[1])
-        thetas = parseThetas(args.run[2])
-        result_dir = args.run[3]
+        score_stepsize = int(args.run[2])
+        thetas = parseThetas(args.run[3])
+        result_dir = args.run[4]
         if args.run[0] == 'synthetic':
             rerank_with_cfa(score_ranges,
+                            score_stepsize,
                             thetas,
                             result_dir,
                             '../data/synthetic/dataset.csv',
