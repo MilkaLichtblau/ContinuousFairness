@@ -107,7 +107,7 @@ def main():
         createLSATDatasets()
     elif args.run:
         score_ranges = parseScoreRanges(args.run[1])
-        score_stepsize = int(args.run[2])
+        score_stepsize = float(args.run[2])
         thetas = parseThetas(args.run[3])
         result_dir = args.run[4]
         if args.run[0] == 'synthetic':

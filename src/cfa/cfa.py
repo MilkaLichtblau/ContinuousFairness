@@ -42,7 +42,7 @@ class ContinuousFairnessAlgorithm():
         self.__thetas = thetas
         self.__regForOT = regForOT
 
-        self.__fairData = pd.DataFrame(columns=self.__groupNames)
+        self.__fairData = pd.DataFrame()
         self.__rawDataAsHistograms = pd.DataFrame(columns=self.__groupNames)
         self.__fairDataAsHistograms = pd.DataFrame(columns=self.__groupNames)
 
@@ -112,25 +112,27 @@ class ContinuousFairnessAlgorithm():
             self.__plott(groupFairScores, 'fairScoreReplacementStrategy.png')
 
         for groupName in self.__rawData.columns:
-            rawScores = self.__rawData[groupName][~np.isnan(self.__rawData[groupName])]
+            groupRawScores = self.__rawData[groupName][~np.isnan(self.__rawData[groupName])]
             fairScores = groupFairScores[groupName]
+
+            assert not fairScores.isnull().any()
 
             for index, fairScore in fairScores.iteritems():
                 # fairScore = fairScore.at[rawScore, groupName]
             #             fairScore = fairScore.at[0]
                 range_left = self.__bin_edges[index]
                 range_right = self.__bin_edges[index + 1]
-                toBeReplaced = np.where((rawScores >= range_left) & (rawScores <= range_right))[0]
-                rawScores[toBeReplaced] = fairScore
-                # rawScores[rawScores == index] = fairScore
-            self.__fairData[groupName] = rawScores
+                toBeReplaced = np.where((groupRawScores > range_left) & (groupRawScores <= range_right))[0]
+                groupRawScores[toBeReplaced] = fairScore
+            # self.__fairData[groupName] = groupRawScores
+            self.__fairData = pd.concat([self.__fairData, groupRawScores], axis=1)
 
         if self.__plot:
             self.__fairData.plot.kde()
             plt.savefig(self.__plotPath + 'fairScoreDistributionPerGroup.png', dpi=100, bbox_inches='tight')
-            bin_edges = np.linspace(groupFairScores.min().min(), groupFairScores.max().max(), int(self.__num_bins / 1))
-            self.__getGroupHistograms(self.__fairData, self.__fairDataAsHistograms, bin_edges)
-            self.__plott(self.__fairDataAsHistograms, 'fairScoresAsHistograms.png')
+#             bin_edges = np.linspace(groupFairScores.min().min(), groupFairScores.max().max(), int(self.__num_bins / 5))
+#             self.__getGroupHistograms(self.__fairData, self.__fairDataAsHistograms, bin_edges)
+#             self.__plott(self.__fairDataAsHistograms, 'fairScoresAsHistograms.png')
 
     def __plott(self, dataframe, filename):
         dataframe.plot(kind='line', use_index=False)
@@ -138,7 +140,7 @@ class ContinuousFairnessAlgorithm():
 
     def continuousFairnessAlgorithm(self):
         """
-        TODO: write that algorithm assumes finite integer scores, so no floating scores are allowed
+        TODO: write that algorithm assumes finite float scores, so no floating scores are allowed
         and they have to be represented somehow as integers, otherwise the algorithm doesn't work
         """
 

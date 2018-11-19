@@ -21,9 +21,9 @@ def scoresByGroups(data, groups, qual_attr):
     @return: dataframe with group labels as column names and scores per group as column values
     """
     protectedAttributes = groups.columns.values
-    result = pd.DataFrame(dtype=int)
+    result = pd.DataFrame(dtype=float)
     # select all rows that belong to one group
-    for idx, group in groups.iterrows():
+    for _, group in groups.iterrows():
         colName = str(group.values)
         scoresPerGroup = pd.DataFrame(data)
         for prot_attr in protectedAttributes:

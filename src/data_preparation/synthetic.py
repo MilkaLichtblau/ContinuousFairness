@@ -121,10 +121,10 @@ class SyntheticDatasetCreator(object):
                 else:
                     low -= 1
             mu = np.median([upp, low])
-            sigma = 1  # (upp - low) / 2
+            sigma = 2 * (upp - low) / 3
 
             x[colName] = get_truncated_normal(mean=mu, sd=sigma, lowerr=low, upperr=upp, size=len(x))
-            x[colName] = x[colName]
+            # x[colName] = round(x[colName]).astype(int)
             return x
 
         for attr in self.nonProtectedAttributes:
