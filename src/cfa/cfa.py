@@ -96,15 +96,15 @@ class ContinuousFairnessAlgorithm():
             self.__plott(group_barycenters, 'groupBarycenters.png')
         return group_barycenters
 
-    def __calculateFairScores(self, group_barycenters):
+    def __calculateFairScores(self, group_barycenters, total_bary):
         # calculate new scores from group barycenters
         groupFairScores = pd.DataFrame(columns=self.__groupNames)
         for groupName in self.__rawDataAsHistograms:
-            ot_matrix = ot.emd(self.__rawDataAsHistograms[groupName],
-                               group_barycenters[groupName],
+            ot_matrix = ot.emd(group_barycenters[groupName],
+                               self.__rawDataAsHistograms[groupName],
                                self.__lossMatrix)
-            plt.imshow(ot_matrix)
-            plt.show()
+#             plt.imshow(ot_matrix)
+#             plt.show()
             # TODO: landet man damit auf jeden Fall im gleichen Score Range?
             groupFairScores[groupName] = np.matmul(ot_matrix, self.__score_values.T)
 
@@ -150,5 +150,5 @@ class ContinuousFairnessAlgorithm():
         total_bary = self.__getTotalBarycenter()
         group_barycenters = self.__get_group_barycenters(total_bary)
 
-        self.__calculateFairScores(group_barycenters)
+        self.__calculateFairScores(group_barycenters, total_bary)
 
