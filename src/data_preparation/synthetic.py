@@ -6,6 +6,7 @@ Created on Oct 3, 2017
 '''
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import random
 import itertools
 import uuid
@@ -102,8 +103,9 @@ class SyntheticDatasetCreator(object):
         @param upper:                      total upper bound for generated scores
         """
 
-        def get_truncated_normal(mean=0, sd=1, low=0, upp=10, size=100):
-            return truncnorm.rvs((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd, size=size)
+        def get_truncated_normal(mean=0, sd=1, lowerr=0, upperr=10, size=100):
+            distribution = truncnorm((lowerr - mean) / sd, (upperr - mean) / sd, loc=mean, scale=sd)
+            return distribution.rvs(size)
 
         def score(x, colName):
             low = np.random.randint(lower, upper)
@@ -118,11 +120,11 @@ class SyntheticDatasetCreator(object):
                     upp += 1
                 else:
                     low -= 1
-            mu = np.random.randint(low, upp)
-            sigma = np.random.randint(low, upp)
+            mu = np.median([upp, low])
+            sigma = 1  # (upp - low) / 2
 
-            x[colName] = get_truncated_normal(mean=mu, sd=sigma, low=low, upp=upp, size=len(x))
-            x[colName] = x[colName].round().astype(int)
+            x[colName] = get_truncated_normal(mean=mu, sd=sigma, lowerr=low, upperr=upp, size=len(x))
+            x[colName] = x[colName]
             return x
 
         for attr in self.nonProtectedAttributes:

@@ -7,7 +7,6 @@ Created on Sep 27, 2018
 import ot
 import numpy as np
 import pandas as pd
-import visualization.plots as plots
 import matplotlib.pyplot as plt
 
 
@@ -35,6 +34,8 @@ class ContinuousFairnessAlgorithm():
         self.__score_values = np.arange(score_ranges[0], score_ranges[1] + score_stepsize, score_stepsize)
         # calculate bin number for histograms and loss matrix size
         self.__num_bins = int(len(self.__score_values))
+        leftMostEdge = self.__score_values[0] - (self.__score_values[1] - self.__score_values[0])
+        self.__bin_edges = np.insert(self.__score_values, 0, leftMostEdge)
         # calculate loss matrix
         self.__lossMatrix = ot.utils.dist0(self.__num_bins)
         self.__lossMatrix /= self.__lossMatrix.max()
@@ -102,6 +103,8 @@ class ContinuousFairnessAlgorithm():
             ot_matrix = ot.emd(self.__rawDataAsHistograms[groupName],
                                group_barycenters[groupName],
                                self.__lossMatrix)
+            plt.imshow(ot_matrix)
+            plt.show()
             # TODO: landet man damit auf jeden Fall im gleichen Score Range?
             groupFairScores[groupName] = np.matmul(ot_matrix, self.__score_values.T)
 
@@ -115,13 +118,17 @@ class ContinuousFairnessAlgorithm():
             for index, fairScore in fairScores.iteritems():
                 # fairScore = fairScore.at[rawScore, groupName]
             #             fairScore = fairScore.at[0]
-                rawScores[rawScores == index] = fairScore
+                range_left = self.__bin_edges[index]
+                range_right = self.__bin_edges[index + 1]
+                toBeReplaced = np.where((rawScores >= range_left) & (rawScores <= range_right))[0]
+                rawScores[toBeReplaced] = fairScore
+                # rawScores[rawScores == index] = fairScore
             self.__fairData[groupName] = rawScores
 
         if self.__plot:
             self.__fairData.plot.kde()
             plt.savefig(self.__plotPath + 'fairScoreDistributionPerGroup.png', dpi=100, bbox_inches='tight')
-            bin_edges = np.linspace(groupFairScores.min().min(), groupFairScores.max().max(), int(self.__num_bins / 4))
+            bin_edges = np.linspace(groupFairScores.min().min(), groupFairScores.max().max(), int(self.__num_bins / 1))
             self.__getGroupHistograms(self.__fairData, self.__fairDataAsHistograms, bin_edges)
             self.__plott(self.__fairDataAsHistograms, 'fairScoresAsHistograms.png')
 
@@ -133,14 +140,10 @@ class ContinuousFairnessAlgorithm():
         """
         TODO: write that algorithm assumes finite integer scores, so no floating scores are allowed
         and they have to be represented somehow as integers, otherwise the algorithm doesn't work
-
-
         """
 
-        leftMostEdge = self.__score_values[0] - (self.__score_values[1] - self.__score_values[0])
-        bin_edges = np.insert(self.__score_values, 0, leftMostEdge)
-
-        self.__getGroupHistograms(self.__rawData, self.__rawDataAsHistograms, bin_edges)
+        self.__getGroupHistograms(self.__rawData, self.__rawDataAsHistograms, self.__bin_edges)
+        print(self.__rawDataAsHistograms.idxmax())
         if self.__plot:
             self.__plott(self.__rawDataAsHistograms, 'rawScoresAsHistograms.png')
 
