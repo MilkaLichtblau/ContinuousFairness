@@ -99,9 +99,9 @@ class ContinuousFairnessAlgorithm():
     def __calculateFairScores(self, group_barycenters, total_bary):
         # calculate new scores from group barycenters
         groupFairScores = pd.DataFrame(columns=self.__groupNames)
-        for groupName in self.__rawDataAsHistograms:
-            ot_matrix = ot.emd(group_barycenters[groupName],
-                               self.__rawDataAsHistograms[groupName],
+        for groupName in self.__groupNames:
+            ot_matrix = ot.emd(self.__rawDataAsHistograms[groupName],
+                               group_barycenters[groupName],
                                self.__lossMatrix)
 #             plt.imshow(ot_matrix)
 #             plt.show()
@@ -115,24 +115,19 @@ class ContinuousFairnessAlgorithm():
             groupRawScores = self.__rawData[groupName][~np.isnan(self.__rawData[groupName])]
             fairScores = groupFairScores[groupName]
 
-            assert not fairScores.isnull().any()
-
             for index, fairScore in fairScores.iteritems():
-                # fairScore = fairScore.at[rawScore, groupName]
-            #             fairScore = fairScore.at[0]
                 range_left = self.__bin_edges[index]
                 range_right = self.__bin_edges[index + 1]
                 toBeReplaced = np.where((groupRawScores > range_left) & (groupRawScores <= range_right))[0]
                 groupRawScores[toBeReplaced] = fairScore
-            # self.__fairData[groupName] = groupRawScores
             self.__fairData = pd.concat([self.__fairData, groupRawScores], axis=1)
 
         if self.__plot:
             self.__fairData.plot.kde()
             plt.savefig(self.__plotPath + 'fairScoreDistributionPerGroup.png', dpi=100, bbox_inches='tight')
-#             bin_edges = np.linspace(groupFairScores.min().min(), groupFairScores.max().max(), int(self.__num_bins / 5))
-#             self.__getGroupHistograms(self.__fairData, self.__fairDataAsHistograms, bin_edges)
-#             self.__plott(self.__fairDataAsHistograms, 'fairScoresAsHistograms.png')
+            bin_edges = np.linspace(groupFairScores.min().min(), groupFairScores.max().max(), int(self.__num_bins))
+            self.__getGroupHistograms(self.__fairData, self.__fairDataAsHistograms, bin_edges)
+            self.__plott(self.__fairDataAsHistograms, 'fairScoresAsHistograms.png')
 
     def __plott(self, dataframe, filename):
         dataframe.plot(kind='line', use_index=False)
