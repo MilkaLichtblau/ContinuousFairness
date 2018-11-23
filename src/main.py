@@ -46,7 +46,7 @@ def createLSATDatasets():
     plotKDEPerGroup(creator.dataset, creator.groups, 'ZFYA', '../data/LSAT/gender/scoreDistributionPerGroup_Gender_ZFYA', '')
 
 
-def rerank_with_cfa(score_ranges, score_stepsize, thetas, result_dir, pathToData, pathToGroups, qual_attr):
+def rerank_with_cfa(score_ranges, score_stepsize, thetas, result_dir, pathToData, pathToGroups, qual_attr, prot_attr):
     data = pd.read_csv(pathToData, sep=',')
     groups = pd.read_csv(pathToGroups, sep=',')
 
@@ -56,11 +56,14 @@ def rerank_with_cfa(score_ranges, score_stepsize, thetas, result_dir, pathToData
 
     regForOT = 5e-3
 
-    scoresPerGroup = scoresByGroups(data, groups, qual_attr)
-    cfa = ContinuousFairnessAlgorithm(scoresPerGroup,
+    cfa = ContinuousFairnessAlgorithm(data,
+                                      groups,
+                                      prot_attr,
+                                      qual_attr,
                                       score_ranges,
                                       score_stepsize,
-                                      thetas, regForOT,
+                                      thetas,
+                                      regForOT,
                                       path=result_dir,
                                       plot=True)
     cfa.continuousFairnessAlgorithm()
@@ -117,7 +120,8 @@ def main():
                             result_dir,
                             '../data/synthetic/dataset.csv',
                             '../data/synthetic/groups.csv',
-                            'score')
+                            'score',
+                            ["gender", "ethnicity"])
         elif args.run[0] == 'LSAT_gender':
             # TODO: run experiments also with ZFYA
             rerank_with_cfa(thetas,
