@@ -59,7 +59,7 @@ class ContinuousFairnessAlgorithm():
         self.__plotPath = path
         self.__plot = plot
 
-    def __getScoresByGroup(self, data, groups, qual_attr):
+    def _getScoresByGroup(self, data, groups, qual_attr):
         """
         takes a dataset with one item per row and each item has qualifying as well as sensitive
         attributes.
@@ -87,7 +87,7 @@ class ContinuousFairnessAlgorithm():
             result = pd.concat([result, resultCol], axis=1)
         return result
 
-    def __getDataAsHistograms(self, data, histograms, bin_edges):
+    def _getDataAsHistograms(self, data, histograms, bin_edges):
         # get histogram from each column and save to new dataframe
         # gets as parameters pointers to raw data and new dataframe where to save the histograms
         for groupName in data.columns:
@@ -115,7 +115,7 @@ class ContinuousFairnessAlgorithm():
 
         return total_bary
 
-    def __get_group_barycenters(self, total_bary):
+    def _get_group_barycenters(self, total_bary):
         # compute barycenters between general barycenter and each score distribution (i.e. each social group)
         group_barycenters = pd.DataFrame(columns=self.__groupNames)
         for groupName in self.__rawDataPerGroupAsHistograms:  # build 2-column matrix from group data and general barycenter
@@ -133,7 +133,7 @@ class ContinuousFairnessAlgorithm():
             self.__plott(group_barycenters, 'groupBarycenters.png')
         return group_barycenters
 
-    def __calculateFairReplacementStrategy(self, group_barycenters):
+    def _calculateFairReplacementStrategy(self, group_barycenters):
         # calculate new scores from group barycenters
         groupFairScores = pd.DataFrame(columns=self.__groupNames)
         for groupName in self.__groupNames:
@@ -155,7 +155,7 @@ class ContinuousFairnessAlgorithm():
 
         return groupFairScores
 
-    def __replaceRawByFairScores(self, groupFairScores):
+    def _replaceRawByFairScores(self, groupFairScores):
 
         def replace(rawData, colName, groupName):
             rawScores = rawData[colName]
