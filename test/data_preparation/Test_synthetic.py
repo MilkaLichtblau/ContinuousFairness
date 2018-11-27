@@ -14,10 +14,8 @@ class TestSyntheticDatasetCreator(unittest.TestCase):
         self.protectedAttributes = {"gender": 2, "ethnicity": 3}
         self.size = 60
 
-
     def tearDown(self):
         pass
-
 
     def test_Constructor(self):
         creator = synthetic.SyntheticDatasetCreator(self.size, self.protectedAttributes, self.nonProtectedAttributes)
@@ -32,7 +30,6 @@ class TestSyntheticDatasetCreator(unittest.TestCase):
                           (1, 2)]
         self.assertCountEqual(expectedGroups, creator.groups)
 
-
     def test_createScoresNormalDistribution(self):
         creator = synthetic.SyntheticDatasetCreator(self.size, self.protectedAttributes, self.nonProtectedAttributes)
 
@@ -43,5 +40,4 @@ class TestSyntheticDatasetCreator(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

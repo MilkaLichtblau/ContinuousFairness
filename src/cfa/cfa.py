@@ -8,12 +8,12 @@ import ot
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpmath import norm
 
 
 class ContinuousFairnessAlgorithm():
     """
     TODO: write doc
+    TODO: rewrite algorithm with integer scores only!!
     """
 
     def __init__(self, rawData, groups, prot_attr, qual_attr, score_ranges, score_stepsize, thetas, regForOT, path='.', plot=False):
@@ -38,9 +38,9 @@ class ContinuousFairnessAlgorithm():
         self.__rawData = rawData
         self.__qualityAtribute = qual_attr
         self.__protectedAttributes = prot_attr
-        self.__rawDataByGroup = self.__getScoresByGroup(rawData, groups, qual_attr)
-        self.__groupNames = self.__rawDataByGroup.columns.values.tolist()
         self.__groups = groups  # TODO: das könnte man elefanter lösen, hier ist jetzt einiges doppelt und dreifach...nochmal refactoring machen
+        self.__rawDataByGroup = self._getScoresByGroup(self.__rawData)
+        self.__groupNames = self.__rawDataByGroup.columns.values.tolist()
         self.__score_values = np.arange(score_ranges[0], score_ranges[1] + score_stepsize, score_stepsize)
         # calculate bin number for histograms and loss matrix size
         self.__num_bins = int(len(self.__score_values))
@@ -59,29 +59,31 @@ class ContinuousFairnessAlgorithm():
         self.__plotPath = path
         self.__plot = plot
 
-    def _getScoresByGroup(self, data, groups, qual_attr):
+    def _getScoresByGroup(self, dataset):
         """
         takes a dataset with one item per row and each item has qualifying as well as sensitive
         attributes.
         takes all values from column qual_attr and resorts data such that result contains all scores from
         qual_attr in one column per group of sensitive attributes.
 
-            @param groups:                 all possible groups in data as dataframe. One row contains manifestations
+        TODO: correct doc
+
+        @param groups:                 all possible groups in data as dataframe. One row contains manifestations
                                            of protected attributes, hence represents a group
                                            example: [[white, male], [white, female], [hispanic, male], [hispanic, female]]
         @param qual_attr:              name of column that contains the quality attribute (only one possible)
 
         @return: dataframe with group labels as column names and scores per group as column values
         """
-        protectedAttributes = groups.columns.values
+        protectedAttributes = self.__groups.columns.values
         result = pd.DataFrame(dtype=float)
         # select all rows that belong to one group
-        for _, group in groups.iterrows():
+        for _, group in self.__groups.iterrows():
             colName = str(group.values)
-            scoresPerGroup = pd.DataFrame(data)
+            copy = dataset.copy()
             for prot_attr in protectedAttributes:
-                scoresPerGroup = scoresPerGroup.loc[(scoresPerGroup[prot_attr] == group.get(prot_attr))]
-            resultCol = pd.DataFrame(data=scoresPerGroup[qual_attr].values, columns=[colName])
+                copy = copy.loc[(copy[prot_attr] == group.get(prot_attr))]
+            resultCol = pd.DataFrame(data=copy[self.__qualityAtribute].values, columns=[colName])
             # needs concat to avoid data loss in case new resultCol is longer than already existing result
             # dataframe
             result = pd.concat([result, resultCol], axis=1)
@@ -90,15 +92,15 @@ class ContinuousFairnessAlgorithm():
     def _getDataAsHistograms(self, data, histograms, bin_edges):
         # get histogram from each column and save to new dataframe
         # gets as parameters pointers to raw data and new dataframe where to save the histograms
-        for groupName in data.columns:
-            groupColNoNans = pd.DataFrame(data[groupName][~np.isnan(data[groupName])])
-            colAsHist = np.histogram(groupColNoNans[groupName], bins=bin_edges, density=True)[0]
-            histograms[groupName] = colAsHist
+        for colName in data.columns:
+            colNoNans = pd.DataFrame(data[colName][~np.isnan(data[colName])])
+            colAsHist = np.histogram(colNoNans[colName], bins=bin_edges, density=True)[0]
+            histograms[colName] = colAsHist
 
         if histograms.isnull().values.any():
             raise ValueError("Histogram data contains nans")
 
-    def __getTotalBarycenter(self):
+    def _getTotalBarycenter(self):
         # calculate group sizes in total and percent
         groupSizes = self.__rawDataByGroup.count()
         groupSizesPercent = self.__rawDataByGroup.count().divide(groupSizes.sum())
