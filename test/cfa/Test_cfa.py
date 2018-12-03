@@ -60,9 +60,34 @@ class TestContinuousFairnessAlgorithm(unittest.TestCase):
         expected = pd.DataFrame(expectedData, columns=["[0 0]", "[0 1]", "[1 0]", "[1 1]"])
         actual = cfa_object._getScoresByGroup(self.smallRawData)
         pd.testing.assert_frame_equal(expected, actual)
-        
-        
-    def test__replaceRawByFairScores(self):
+
+    def test_replaceRawByFairScores_VeryDifferentScores(self):
+        groupFairScoresData = np.array([[12, 13, 14, 15, 16, 17, 18, 19],
+                                        [22, 23, 24, 25, 26, 27, 28, 29],
+                                        [32, 33, 34, 35, 36, 37, 38, 39],
+                                        [42, 43, 44, 45, 46, 47, 48, 49]], dtype=object)
+        groupFairScores = pd.DataFrame(groupFairScoresData.T, columns=["[0 0]", "[0 1]", "[1 0]", "[1 1]"])
+
+        cfa_object = cfa.ContinuousFairnessAlgorithm(self.smallRawData,
+                                                     self.groups,
+                                                     self.protectedAttributes,
+                                                     self.qualityAttribute,
+                                                     self.scoreRanges,
+                                                     self.scoreStepsize,
+                                                     [1, 1, 1, 1],
+                                                     self.regForOT)
+
+        expectedData = np.array([[int(0), int(0), int(19), ""],
+                                 [int(0), int(0), int(18), ""],
+                                 [int(0), int(1), int(27), ""],
+                                 [int(0), int(1), int(26), ""],
+                                 [int(1), int(0), int(35), ""],
+                                 [int(1), int(0), int(34), ""],
+                                 [int(1), int(1), int(43), ""],
+                                 [int(1), int(1), int(42), ""]], dtype=object)
+        expected = pd.DataFrame(expectedData, columns=["gender", "ethnicity", "score", "uuid"])
+        actual = cfa_object._replaceRawByFairScores(groupFairScores)
+        pd.testing.assert_frame_equal(expected, actual)
 
 
 if __name__ == "__main__":

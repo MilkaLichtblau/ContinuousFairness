@@ -18,8 +18,8 @@ class ContinuousFairnessAlgorithm():
 
     def __init__(self, rawData, groups, prot_attr, qual_attr, score_ranges, score_stepsize, thetas, regForOT, path='.', plot=False):
         """
-        @param rawData:          pandas dataframe with scores per group, groups do not necessarily have same
-                                 amount of scores, i.e. data might contain NaNs
+        @param rawData:          pandas dataframe with scores per group, groups are not necessarily
+                                 of the same size, i.e. data might contain NaNs
         @param groups:           all possible groups in data as dataframe. One row contains manifestations
                                  of protected attributes, hence represents a group
                                  example: [[white, male], [white, female], [hispanic, male], [hispanic, female]]
@@ -150,6 +150,9 @@ class ContinuousFairnessAlgorithm():
             norm_matrix = np.diag(inverse_norm_vec)
             normalized_ot_matrix = np.matmul(norm_matrix, ot_matrix)
 
+            # this contains a vector per group with len(score_values) entries (e.g. a score range from 1 to 100
+            # results into a group fair score vector of length 100
+
             groupFairScores[groupName] = np.matmul(normalized_ot_matrix, self.__score_values.T)
 
         if self.__plot:
@@ -158,34 +161,52 @@ class ContinuousFairnessAlgorithm():
         return groupFairScores
 
     def _replaceRawByFairScores(self, groupFairScores):
+        '''
+        TODO: write how raw scores are replaced by fair scores from groupFairScores matrix
+        '''
 
-        def replace(rawData, colName, groupName):
+        def buildGroupNameFromValues(dataRow):
+            name = "["
+            firstIter = True
+            for attr in self.__protectedAttributes:
+                if firstIter:
+                    name += str(dataRow.iloc[0][attr])
+                    firstIter = False
+                else:
+                    name += " " + str(dataRow.iloc[0][attr])
+            name += "]"
+            return name
+
+        def replace(rawData, colName):
             rawScores = rawData[colName]
+            groupName = buildGroupNameFromValues(rawData.head(1))
             replaced = rawData.copy()
             fairScores = groupFairScores[groupName]
             for index, fairScore in fairScores.iteritems():
                 range_left = self.__bin_edges[index]
                 range_right = self.__bin_edges[index + 1]
-                replaceAtIndex = rawScores.between(range_left, range_right)
+                replaceAtIndex = (rawScores > range_left) & (rawScores <= range_right)
                 replaced.at[replaceAtIndex, colName] = fairScore
                 # TODO: fair scores stehen nicht an der richtigen Stelle, d.h. für Gruppe 00 stehen die
                 # fair scores in den vorderen Indexen, aber die Scores fangen erst höher an
             return replaced
 
-        for groupName in groupFairScores.columns:
-            self.__fairData = self.__rawData.copy()
-            self.__fairData = self.__fairData.groupby(list(self.__protectedAttributes), as_index=False,
-                                                    sort=False).apply(replace,
-                                                                      colName=self.__qualityAtribute,
-                                                                      groupName=groupName)
+        self.__fairData = self.__rawData.copy()
+        self.__fairData = self.__fairData.groupby(list(self.__protectedAttributes),
+                                                  as_index=False,
+                                                  sort=False).apply(replace,
+                                                                    colName=self.__qualityAtribute)
+        self.__fairData = self.__fairData.reset_index(drop=True)
 
         if self.__plot:
-            fairDataPerGroup = self.__getScoresByGroup(self.__fairData, self.__groups, self.__qualityAtribute)
-#             fairDataPerGroup.plot.kde()
-#             plt.savefig(self.__plotPath + 'fairScoreDistributionPerGroup.png', dpi=100, bbox_inches='tight')
-#             bin_edges = np.linspace(groupFairScores.min().min(), groupFairScores.max().max(), int(self.__num_bins))
-            self.__getDataAsHistograms(fairDataPerGroup, self.__fairDataAsHistograms, self.__bin_edges)
+            fairDataPerGroup = self._getScoresByGroup(self.__fairData)
+            fairDataPerGroup.plot.kde()
+            plt.savefig(self.__plotPath + 'fairScoreDistributionPerGroup.png', dpi=100, bbox_inches='tight')
+            bin_edges = np.linspace(groupFairScores.min().min(), groupFairScores.max().max(), int(self.__num_bins))
+            self._getDataAsHistograms(fairDataPerGroup, self.__fairDataAsHistograms, bin_edges)
             self.__plott(self.__fairDataAsHistograms, 'fairScoresAsHistograms.png')
+
+        return self.__fairData
 
     def __plott(self, dataframe, filename):
         dataframe.plot(kind='line', use_index=False)
@@ -197,14 +218,14 @@ class ContinuousFairnessAlgorithm():
         and they have to be represented somehow as integers, otherwise the algorithm doesn't work
         """
 
-        self.__getDataAsHistograms(self.__rawDataByGroup, self.__rawDataPerGroupAsHistograms, self.__bin_edges)
+        self._getDataAsHistograms(self.__rawDataByGroup, self.__rawDataPerGroupAsHistograms, self.__bin_edges)
         print(self.__rawDataPerGroupAsHistograms.idxmax())
         if self.__plot:
             self.__plott(self.__rawDataPerGroupAsHistograms, 'rawScoresAsHistograms.png')
 
-        total_bary = self.__getTotalBarycenter()
-        group_barycenters = self.__get_group_barycenters(total_bary)
+        total_bary = self._getTotalBarycenter()
+        group_barycenters = self._get_group_barycenters(total_bary)
 
-        fairScoreReplacementStrategy = self.__calculateFairReplacementStrategy(group_barycenters)
-        self.__replaceRawByFairScores(fairScoreReplacementStrategy)
+        fairScoreReplacementStrategy = self._calculateFairReplacementStrategy(group_barycenters)
+        self._replaceRawByFairScores(fairScoreReplacementStrategy)
 
