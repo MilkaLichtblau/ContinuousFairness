@@ -187,8 +187,6 @@ class ContinuousFairnessAlgorithm():
                 range_right = self.__bin_edges[index + 1]
                 replaceAtIndex = (rawScores > range_left) & (rawScores <= range_right)
                 replaced.at[replaceAtIndex, colName] = fairScore
-                # TODO: fair scores stehen nicht an der richtigen Stelle, d.h. für Gruppe 00 stehen die
-                # fair scores in den vorderen Indexen, aber die Scores fangen erst höher an
             return replaced
 
         self.__fairData = self.__rawData.copy()
