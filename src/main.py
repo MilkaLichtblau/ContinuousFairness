@@ -46,7 +46,8 @@ def createLSATDatasets():
     plotKDEPerGroup(creator.dataset, creator.groups, 'ZFYA', '../data/LSAT/gender/scoreDistributionPerGroup_Gender_ZFYA', '')
 
 
-def rerank_with_cfa(score_ranges, score_stepsize, thetas, result_dir, pathToData, pathToGroups, qual_attr, prot_attr):
+def rerank_with_cfa(score_ranges, score_stepsize, thetas, result_dir, pathToData,
+                    pathToGroups, qual_attr, prot_attr):
     data = pd.read_csv(pathToData, sep=',')
     groups = pd.read_csv(pathToGroups, sep=',')
 
@@ -122,27 +123,36 @@ def main():
                             '../data/synthetic/groups.csv',
                             'score',
                             ["gender", "ethnicity"])
-        elif args.run[0] == 'LSAT_gender':
+        elif args.run[0] == 'lsat_gender':
             # TODO: run experiments also with ZFYA
-            rerank_with_cfa(thetas,
+            rerank_with_cfa(score_ranges,
+                            score_stepsize,
+                            thetas,
                             result_dir,
                             '../data/LSAT/gender/genderLSAT.csv',
                             '../data/LSAT/gender/genderGroups.csv',
-                            'LSAT')
-        elif args.run[0] == 'LSAT_race':
-            rerank_with_cfa(thetas,
+                            'LSAT',
+                            ["sex"])
+        elif args.run[0] == 'lsat_race':
+            rerank_with_cfa(score_ranges,
+                            score_stepsize,
+                            thetas,
                             result_dir,
                             '../data/LSAT/allRace/allEthnicityLSAT.csv',
                             '../data/LSAT/allRace/allEthnicityGroups.csv',
-                            'LSAT')
-        elif args.run[0] == 'LSAT_all':
-            rerank_with_cfa(thetas,
+                            'LSAT',
+                            ["race"])
+        elif args.run[0] == 'lsat_all':
+            rerank_with_cfa(score_ranges,
+                            score_stepsize,
+                            thetas,
                             result_dir,
                             '../data/LSAT/all/allInOneLSAT.csv',
                             '../data/LSAT/all/allInOneGroups.csv',
-                            'LSAT')
+                            'LSAT',
+                            ["sex", "race"])
         else:
-            parser.error("unknown dataset. Options are 'synthetic', 'LSAT_gender', 'LSAT_race, 'LSAT_all'")
+            parser.error("unknown dataset. Options are 'synthetic', 'lsat_gender', 'lsat_race, 'lsat_all'")
     else:
         parser.error("choose one command line option")
 
