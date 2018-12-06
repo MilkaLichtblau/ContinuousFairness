@@ -21,7 +21,10 @@
 | --- | --- | --- | --- |
 | 2 (gender only) | 0,0 | [link]() | [link]() |
 | 2 (gender only) | 1,1 | [link]() | [link]() |
+| 2 (gender only) | 0.5,0.5 | [link]() | [link]() |
 | 7 (ethnicity only) | 0,0,0,0,0,0,0 | [link]() | [link]() |
+| 7 (ethnicity only) | 0.5,0.5,0.5,0.5,0.5,0.5,0.5 | [link]() | [link]() |
 | 7 (ethnicity only) | 1,1,1,1,1,1,1 | [link]() | [link]() |
 | 14 (all combined) | 0,0,0,0,0,0,0,0,0,0,0,0,0,0 | [link]() | [link]() |
+| 14 (all combined) | 0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5 | [link]() | [link]() |
 | 14 (all combined) | 1,1,1,1,1,1,1,1,1,1,1,1,1,1 | [link]() | [link]() |
