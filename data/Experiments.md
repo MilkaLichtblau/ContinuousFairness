@@ -17,14 +17,15 @@
 * total 14 groups
 * scores are results from a university entrance test for a law school in the US (CITATION)
 
-| number of groups | thetas | group barycenters | fair scores |
-| --- | --- | --- | --- |
+| number of groups | thetas | bin size | group barycenters | fair scores |
+| --- | --- | --- | --- | --- |
 | 2 (gender only) | 0,0 | [link]() | [link]() |
-| 2 (gender only) | 1,1 | [link]() | [link]() |
-| 2 (gender only) | 0.5,0.5 | [link]() | [link]() |
-| 7 (ethnicity only) | 0,0,0,0,0,0,0 | [link]() | [link]() |
-| 7 (ethnicity only) | 0.5,0.5,0.5,0.5,0.5,0.5,0.5 | [link]() | [link]() |
-| 7 (ethnicity only) | 1,1,1,1,1,1,1 | [link]() | [link]() |
-| 14 (all combined) | 0,0,0,0,0,0,0,0,0,0,0,0,0,0 | [link]() | [link]() |
-| 14 (all combined) | 0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5 | [link]() | [link]() |
-| 14 (all combined) | 1,1,1,1,1,1,1,1,1,1,1,1,1,1 | [link]() | [link]() |
+| 2 (gender only) | 1,1 | 2 | [link]() | [link]() |
+| 2 (gender only) | 1,1 | 1 | [link]() | [link]() |
+| 2 (gender only) | 0.5,0.5 | 1 | [link]() | [link]() |
+| 7 (ethnicity only) | 0,0,0,0,0,0,0 |  1 | [link]() | [link]() |
+| 7 (ethnicity only) | 0.5,0.5,0.5,0.5,0.5,0.5,0.5 |  1 | [link]() | [link]() |
+| 7 (ethnicity only) | 1,1,1,1,1,1,1 |  1 | [link]() | [link]() |
+| 14 (all combined) | 0,0,0,0,0,0,0,0,0,0,0,0,0,0 |  2 | [link]() | [link]() |
+| 14 (all combined) | 0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5 | 2 | [link]() | [link]() |
+| 14 (all combined) | 1,1,1,1,1,1,1,1,1,1,1,1,1,1 | 2 |  [link]() | [link]() |
