@@ -17,6 +17,8 @@
 * total 14 groups
 * scores are results from a university entrance test for a law school in the US (CITATION)
 
+| number of groups | thetas | group barycenters | fair scores |
+| --- | --- | --- | --- |
 | 2 (gender only) | 0,0 | [link]() | [link]() |
 | 2 (gender only) | 1,1 | [link]() | [link]() |
 | 7 (ethnicity only) | 0,0,0,0,0,0,0 | [link]() | [link]() |
