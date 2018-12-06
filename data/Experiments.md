@@ -9,8 +9,8 @@
 | number of groups | thetas | bin size | group barycenters | fair scores |
 | --- | --- | --- | --- | --- |
 | 6 | 1,1,1,1,1,1 | 1 | [link](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/results/theta%3D1/groupBarycenters.png) | [link](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/results/theta%3D1/fairScoreDistributionPerGroup.png)|
-| 6 | 0,0,0,0,0,0 | 1 |[link]() | [link]() |
-| 6 | 0.5,0.5,0.5,0.5,0.5,0.5 | 1 | [link]() | [link]() |
+| 6 | 0,0,0,0,0,0 | 1 |[link](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/results/theta%3D0/groupBarycenters.png) | [link](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/results/theta%3D0/fairScoreDistributionPerGroup.png) |
+| 6 | 0.5,0.5,0.5,0.5,0.5,0.5 | 1 | [link](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/results/theta%3D0.5/groupBarycenters.png) | [link](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/results/theta%3D0.5/fairScoreDistributionPerGroup.png) |
 
 ### LSAT data ###
 * two protected features: gender (male, female), ethnicity (White, Amerindian, Asian, Black, Hispanic, Mexican, Puertorican)
