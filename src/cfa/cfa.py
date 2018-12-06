@@ -8,12 +8,13 @@ import ot
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 
 class ContinuousFairnessAlgorithm():
     """
     TODO: write doc
-    TODO: rewrite algorithm with integer scores only!!
+    TODO: rewrite algorithm with float scores only!!
     """
 
     def __init__(self, rawData, groups, prot_attr, qual_attr, score_ranges, score_stepsize, thetas, regForOT, path='.', plot=False):
@@ -170,10 +171,10 @@ class ContinuousFairnessAlgorithm():
             firstIter = True
             for attr in self.__protectedAttributes:
                 if firstIter:
-                    name += str(dataRow.iloc[0][attr])
+                    name += str(int(dataRow.iloc[0][attr]))
                     firstIter = False
                 else:
-                    name += " " + str(dataRow.iloc[0][attr])
+                    name += " " + str(int(dataRow.iloc[0][attr]))
             name += "]"
             return name
 
@@ -207,13 +208,23 @@ class ContinuousFairnessAlgorithm():
         return self.__fairData
 
     def __plott(self, dataframe, filename):
+        mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3, 'lines.markersize': 15, 'font.family':'Times New Roman'})
+    # avoid type 3 (i.e. bitmap) fonts in figures
+        mpl.rcParams['ps.useafm'] = True
+        mpl.rcParams['pdf.use14corefonts'] = True
+        mpl.rcParams['text.usetex'] = True
+
         dataframe.plot(kind='line', use_index=False)
+        score_attr = self.__qualityAtribute.replace('_', '\_')
+
+        plt.xlabel(score_attr)
+        plt.legend(bbox_to_anchor=(1.1, 1.05))
+        plt.savefig(filename, dpi=100, bbox_inches='tight')
         plt.savefig(self.__plotPath + filename, dpi=100, bbox_inches='tight')
 
     def continuousFairnessAlgorithm(self):
         """
-        TODO: write that algorithm assumes finite float scores, so no floating scores are allowed
-        and they have to be represented somehow as integers, otherwise the algorithm doesn't work
+        TODO: write that algorithm assumes finite float scores, otherwise the algorithm doesn't work
         """
 
         self._getDataAsHistograms(self.__rawDataByGroup, self.__rawDataPerGroupAsHistograms, self.__bin_edges)
