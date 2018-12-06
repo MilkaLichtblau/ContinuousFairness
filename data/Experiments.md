@@ -6,11 +6,11 @@
 * scores are normally distributed integers with different mean and standard deviation for each group (see 
 [this diagram](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/scoreDistributionPerGroup.png))
 
-| number of groups | thetas | group barycenters | fair scores |
-| --- | --- | --- | --- |
-| 6 | 1,1,1,1,1,1 | [link](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/results/theta%3D1/groupBarycenters.png) | [link](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/results/theta%3D1/fairScoreDistributionPerGroup.png)|
-| 6 | 0,0,0,0,0,0 | [link]() | [link]() |
-| 6 | 0.5,0.5,0.5,0.5,0.5,0.5 | [link]() | [link]() |
+| number of groups | thetas | bin size | group barycenters | fair scores |
+| --- | --- | --- | --- | --- |
+| 6 | 1,1,1,1,1,1 | 1 | [link](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/results/theta%3D1/groupBarycenters.png) | [link](https://github.com/MilkaLichtblau/ContinuousFairness/blob/master/data/synthetic/results/theta%3D1/fairScoreDistributionPerGroup.png)|
+| 6 | 0,0,0,0,0,0 | 1 |[link]() | [link]() |
+| 6 | 0.5,0.5,0.5,0.5,0.5,0.5 | 1 | [link]() | [link]() |
 
 ### LSAT data ###
 * two protected features: gender (male, female), ethnicity (White, Amerindian, Asian, Black, Hispanic, Mexican, Puertorican)
