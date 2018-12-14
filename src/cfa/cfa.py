@@ -39,9 +39,10 @@ class ContinuousFairnessAlgorithm():
         self.__rawData = rawData
         self.__qualityAtribute = qual_attr
         self.__protectedAttributes = prot_attr
-        self.__groups = groups  # TODO: das könnte man elefanter lösen, hier ist jetzt einiges doppelt und dreifach...nochmal refactoring machen
+        self.__groups = groups  # TODO: das könnte man eleganter lösen, hier ist jetzt einiges doppelt und dreifach...nochmal refactoring machen
         self.__rawDataByGroup = self._getScoresByGroup(self.__rawData)
-        self.__groupNames = self.__rawDataByGroup.columns.values.tolist()
+        self.__groupColumnNames = self.__rawDataByGroup.columns.values.tolist()
+        self.__groupNamesForPlots = ['Group ' + f'{index}' for index, _ in enumerate(self.__groupColumnNames)]
         self.__score_values = np.arange(score_ranges[0], score_ranges[1] + score_stepsize, score_stepsize)
         # calculate bin number for histograms and loss matrix size
         self.__num_bins = int(len(self.__score_values))
@@ -54,8 +55,8 @@ class ContinuousFairnessAlgorithm():
         self.__regForOT = regForOT
 
         self.__fairData = pd.DataFrame()
-        self.__rawDataPerGroupAsHistograms = pd.DataFrame(columns=self.__groupNames)
-        self.__fairDataAsHistograms = pd.DataFrame(columns=self.__groupNames)
+        self.__rawDataPerGroupAsHistograms = pd.DataFrame(columns=self.__groupColumnNames)
+        self.__fairDataAsHistograms = pd.DataFrame(columns=self.__groupColumnNames)
 
         self.__plotPath = path
         self.__plot = plot
@@ -114,13 +115,15 @@ class ContinuousFairnessAlgorithm():
                                            verbose=True,
                                            log=True)[0]
         if self.__plot:
-            self.__plott(pd.DataFrame(total_bary), 'totalBarycenter.png')
+            self.__plott(pd.DataFrame(total_bary),
+                         'totalBarycenter.png',
+                         xLabel="raw score")
 
         return total_bary
 
     def _get_group_barycenters(self, total_bary):
         # compute barycenters between general barycenter and each score distribution (i.e. each social group)
-        group_barycenters = pd.DataFrame(columns=self.__groupNames)
+        group_barycenters = pd.DataFrame(columns=self.__groupColumnNames)
         for groupName in self.__rawDataPerGroupAsHistograms:  # build 2-column matrix from group data and general barycenter
             groupMatrix = pd.concat([self.__rawDataPerGroupAsHistograms[groupName], pd.Series(total_bary)], axis=1)  # get corresponding theta
             theta = self.__thetas[self.__rawDataPerGroupAsHistograms.columns.get_loc(groupName)]  # calculate barycenters
@@ -133,13 +136,15 @@ class ContinuousFairnessAlgorithm():
                                                                  log=True)[0]
 
         if self.__plot:
-            self.__plott(group_barycenters, 'groupBarycenters.png')
+            self.__plott(group_barycenters,
+                         'groupBarycenters.png',
+                         xLabel="raw score")
         return group_barycenters
 
     def _calculateFairReplacementStrategy(self, group_barycenters):
         # calculate new scores from group barycenters
-        groupFairScores = pd.DataFrame(columns=self.__groupNames)
-        for groupName in self.__groupNames:
+        groupFairScores = pd.DataFrame(columns=self.__groupColumnNames)
+        for groupName in self.__groupColumnNames:
             ot_matrix = ot.emd(self.__rawDataPerGroupAsHistograms[groupName],
                                group_barycenters[groupName],
                                self.__lossMatrix)
@@ -157,7 +162,10 @@ class ContinuousFairnessAlgorithm():
             groupFairScores[groupName] = np.matmul(normalized_ot_matrix, self.__score_values.T)
 
         if self.__plot:
-            self.__plott(groupFairScores, 'fairScoreReplacementStrategy.png')
+            self.__plott(groupFairScores,
+                         'fairScoreReplacementStrategy.png',
+                         xLabel="raw score",
+                         yLabel="fair replacement")
 
         return groupFairScores
 
@@ -198,28 +206,38 @@ class ContinuousFairnessAlgorithm():
         self.__fairData = self.__fairData.reset_index(drop=True)
 
         if self.__plot:
+            mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3, 'lines.markersize': 15, 'font.family':'Times New Roman'})
+            # avoid type 3 (i.e. bitmap) fonts in figures
+            mpl.rcParams['ps.useafm'] = True
+            mpl.rcParams['pdf.use14corefonts'] = True
+            mpl.rcParams['text.usetex'] = True
+
             fairDataPerGroup = self._getScoresByGroup(self.__fairData)
-            fairDataPerGroup.plot.kde()
+            ax = fairDataPerGroup.plot.kde()
+            ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., labels=self.__groupNamesForPlots)
+            ax.set_xlabel("fair score")
             plt.savefig(self.__plotPath + 'fairScoreDistributionPerGroup.png', dpi=100, bbox_inches='tight')
+
             bin_edges = np.linspace(groupFairScores.min().min(), groupFairScores.max().max(), int(self.__num_bins))
             self._getDataAsHistograms(fairDataPerGroup, self.__fairDataAsHistograms, bin_edges)
-            self.__plott(self.__fairDataAsHistograms, 'fairScoresAsHistograms.png')
+            self.__plott(self.__fairDataAsHistograms,
+                         'fairScoresAsHistograms.png',
+                         xLabel="fair score",
+                         yLabel="Density")
 
         return self.__fairData
 
-    def __plott(self, dataframe, filename):
+    def __plott(self, dataframe, filename, xLabel="", yLabel=""):
         mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3, 'lines.markersize': 15, 'font.family':'Times New Roman'})
     # avoid type 3 (i.e. bitmap) fonts in figures
         mpl.rcParams['ps.useafm'] = True
         mpl.rcParams['pdf.use14corefonts'] = True
         mpl.rcParams['text.usetex'] = True
 
-        dataframe.plot(kind='line', use_index=False)
-        score_attr = self.__qualityAtribute.replace('_', '\_')
-
-        plt.xlabel(score_attr)
-        plt.legend(bbox_to_anchor=(1.1, 1.05))
-        plt.savefig(filename, dpi=100, bbox_inches='tight')
+        ax = dataframe.plot(kind='line', use_index=False)
+        ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., labels=self.__groupNamesForPlots)
+        ax.set_xlabel(xLabel)
+        ax.set_ylabel(yLabel)
         plt.savefig(self.__plotPath + filename, dpi=100, bbox_inches='tight')
 
     def continuousFairnessAlgorithm(self):
@@ -230,7 +248,10 @@ class ContinuousFairnessAlgorithm():
         self._getDataAsHistograms(self.__rawDataByGroup, self.__rawDataPerGroupAsHistograms, self.__bin_edges)
         print(self.__rawDataPerGroupAsHistograms.idxmax())
         if self.__plot:
-            self.__plott(self.__rawDataPerGroupAsHistograms, 'rawScoresAsHistograms.png')
+            self.__plott(self.__rawDataPerGroupAsHistograms,
+                         'rawScoresAsHistograms.png',
+                         xLabel="raw score",
+                         yLabel="Density")
 
         total_bary = self._getTotalBarycenter()
         group_barycenters = self._get_group_barycenters(total_bary)

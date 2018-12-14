@@ -16,7 +16,6 @@ höchste ID: 27476
 '''
 
 import pandas as pd
-from scipy.stats import stats
 
 
 class LSATCreator():
