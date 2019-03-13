@@ -1,2 +1,4 @@
 /.pydevproject
 /.project
+.vscode/
+.vscode/settings.json
