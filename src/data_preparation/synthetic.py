@@ -70,10 +70,12 @@ class SyntheticDatasetCreator(object):
         self.__determineGroups(attributeNamesAndCategories)
 
         # generate distribution of protected attributes
-        self.__createCategoricalProtectedAttributes(attributeNamesAndCategories, size)
+        self.__createCategoricalProtectedAttributes(
+            attributeNamesAndCategories, size)
 
         # generate ID column
-        self.__dataset['uuid'] = [uuid.uuid4() for _ in range(len(self.__dataset.index))]
+        self.__dataset['uuid'] = [uuid.uuid4()
+                                  for _ in range(len(self.__dataset.index))]
 
     def createScoresNormalDistribution(self):
         """
@@ -104,7 +106,8 @@ class SyntheticDatasetCreator(object):
         """
 
         def get_truncated_normal(mean=0, sd=1, lowerr=0, upperr=10, size=100):
-            distribution = truncnorm((lowerr - mean) / sd, (upperr - mean) / sd, loc=mean, scale=sd)
+            distribution = truncnorm(
+                (lowerr - mean) / sd, (upperr - mean) / sd, loc=mean, scale=sd)
             return distribution.rvs(size)
 
         def score(x, colName):
@@ -123,8 +126,12 @@ class SyntheticDatasetCreator(object):
             mu = np.median([upp, low])
             sigma = 2 * (upp - low) / 3
 
-            x[colName] = get_truncated_normal(mean=mu, sd=sigma, lowerr=low, upperr=upp, size=len(x))
-            # x[colName] = round(x[colName]).astype(int)
+            x[colName] = get_truncated_normal(mean=mu,
+                                              sd=sigma,
+                                              lowerr=low,
+                                              upperr=upp,
+                                              size=len(x))
+            x[colName] = round(x[colName]).astype(int)
             return x
 
         for attr in self.nonProtectedAttributes:
@@ -164,41 +171,45 @@ class SyntheticDatasetCreator(object):
             elementSets.append(list(range(0, cardinality)))
 
         allGroups = list(itertools.product(*elementSets))
-        self.__groups = pd.DataFrame(allGroups, columns=protectedAttributeNamesAndCategories.keys())
+        self.__groups = pd.DataFrame(
+            allGroups, columns=protectedAttributeNamesAndCategories.keys())
 
     def __createScoresNormalDistributionGroupsSeparated(self, size):
-            """
-            @param size: expected size of the dataset
-            """
-            prot_data = pd.DataFrame()
-            prot_data['gender'] = np.ones(int(size / 2)).astype(int)
-            prot_data['score'] = np.random.normal(0.2, 0.3, size=int(size / 2))
+        """
+        @param size: expected size of the dataset
+        """
+        prot_data = pd.DataFrame()
+        prot_data['gender'] = np.ones(int(size / 2)).astype(int)
+        prot_data['score'] = np.random.normal(0.2, 0.3, size=int(size / 2))
 
-            nonprot_data = pd.DataFrame()
-            nonprot_data['gender'] = np.zeros(int(size / 2)).astype(int)
-            nonprot_data['score'] = np.random.normal(0.8, 0.3, size=int(size / 2))
+        nonprot_data = pd.DataFrame()
+        nonprot_data['gender'] = np.zeros(int(size / 2)).astype(int)
+        nonprot_data['score'] = np.random.normal(0.8, 0.3, size=int(size / 2))
 
-            self.__dataset = pd.concat([prot_data, nonprot_data])
+        self.__dataset = pd.concat([prot_data, nonprot_data])
 
-            # normalize data
-            mini = self.__dataset['score'].min()
-            maxi = self.__dataset['score'].max()
-            self.__dataset['score'] = (self.__dataset['score'] - mini) / (maxi - mini)
+        # normalize data
+        mini = self.__dataset['score'].min()
+        maxi = self.__dataset['score'].max()
+        self.__dataset['score'] = (
+            self.__dataset['score'] - mini) / (maxi - mini)
 
     def __createScoresUniformDistributionGroupsSeparated(self, size):
-            """
-            @param size:     expected size of the dataset
-            """
+        """
+        @param size:     expected size of the dataset
+        """
 
-            prot_data = pd.DataFrame()
-            prot_data['gender'] = np.ones(int(size / 2)).astype(int)
-            prot_data['score'] = np.random.uniform(high=0.5, low=0.0, size=int(size / 2))
+        prot_data = pd.DataFrame()
+        prot_data['gender'] = np.ones(int(size / 2)).astype(int)
+        prot_data['score'] = np.random.uniform(
+            high=0.5, low=0.0, size=int(size / 2))
 
-            nonprot_data = pd.DataFrame()
-            nonprot_data['gender'] = np.zeros(int(size / 2)).astype(int)
-            nonprot_data['score'] = np.random.uniform(high=1.0, low=0.5, size=int(size / 2))
+        nonprot_data = pd.DataFrame()
+        nonprot_data['gender'] = np.zeros(int(size / 2)).astype(int)
+        nonprot_data['score'] = np.random.uniform(
+            high=1.0, low=0.5, size=int(size / 2))
 
-            self.__dataset = pd.concat([prot_data, nonprot_data])
+        self.__dataset = pd.concat([prot_data, nonprot_data])
 
     def __createCategoricalProtectedAttributes(self, attributeNamesAndCategories, size):
         """
@@ -225,4 +236,3 @@ class SyntheticDatasetCreator(object):
 
         # add protected columns to dataset
         self.__dataset = self.__dataset.append(newData)
-

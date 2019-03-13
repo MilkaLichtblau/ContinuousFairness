@@ -8,11 +8,10 @@ import pandas as pd
 import numpy as np
 import argparse
 
-from data_preparation import *
+from data_preparation import synthetic, LSAT
 from visualization.plots import plotKDEPerGroup
 from util.util import scoresByGroups
 # from cfa import cfa
-from argparse import ArgumentError
 from cfa.cfa import ContinuousFairnessAlgorithm
 
 
@@ -25,7 +24,7 @@ def createSyntheticData(size):
     creator.writeToCSV('../data/synthetic/dataset.csv',
                        '../data/synthetic/groups.csv')
     plotKDEPerGroup(creator.dataset, creator.groups, 'score',
-                    '../data/synthetic/scoreDistributionPerGroup', '')
+                    '../data/synthetic/scoreDistributionPerGroup.png', '')
 
 
 def createLSATDatasets():

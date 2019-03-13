@@ -35,7 +35,7 @@ class ContinuousFairnessAlgorithm():
 
         Keyword Arguments:
             path {str} -- [description] (default: {'.'})
-            plot {bool} -- tells if plots sahll be generated (default: {False})
+            plot {bool} -- tells if plots shall be generated (default: {False})
         """
 
         self.__rawData = rawData
@@ -45,16 +45,20 @@ class ContinuousFairnessAlgorithm():
         self.__groupColumnNames = self.__rawDataByGroup.columns.values.tolist()
 
         # have all possible score values in an ndarray
-        self.__scoreValues = np.arange(math.floor(rawData[qual_attr].min()),
-                                       math.ceil(rawData[qual_attr].max()) +
-                                       score_stepsize,
-                                       score_stepsize)
+        # self.__scoreValues = np.arange(rawData[qual_attr].min() - score_stepsize,
+        #                                rawData[qual_attr].max() +
+        #                                score_stepsize,
+        #                                score_stepsize)
 
         # calculate bin number for histograms and loss matrix size
-        self.__num_bins = int(len(self.__scoreValues))
-        leftMostEdge = self.__scoreValues[0] - \
-            (self.__scoreValues[1] - self.__scoreValues[0])
-        self.__bin_edges = np.insert(self.__scoreValues, 0, leftMostEdge)
+        self.__bin_edges = np.arange(rawData[qual_attr].min() - score_stepsize,
+                                     rawData[qual_attr].max() +
+                                     score_stepsize,
+                                     score_stepsize)
+        self.__num_bins = int(len(self.__bin_edges) - 1)
+        # leftMostEdge = self.__scoreValues[0] - \
+        #     (self.__scoreValues[1] - self.__scoreValues[0])
+        # self.__bin_edges = np.insert(self.__scoreValues, 0, leftMostEdge)
 
         # calculate loss matrix
         self.__lossMatrix = ot.utils.dist0(self.__num_bins)
@@ -62,8 +66,8 @@ class ContinuousFairnessAlgorithm():
         self.__thetas = thetas
         self.__regForOT = regForOT
 
-        self.__rawDataPerGroupAsHistograms = self._dataToHistograms(
-            self.__rawDataByGroup, self.__bin_edges)
+        # self.__rawDataPerGroupAsHistograms = self._dataToHistograms(
+        #     self.__rawDataByGroup, self.__bin_edges)
         # self.__fairData = pd.DataFrame()
         # self.__fairDataAsHistograms = pd.DataFrame(columns=self.__groupColumnNames)
 
@@ -130,7 +134,7 @@ class ContinuousFairnessAlgorithm():
 
         return histograms
 
-    def _getTotalBarycenter(self):
+    def _getTotalBarycenter(self, group_histograms_raw):
         """calculates barycenter of whole dataset (self.__rawDataByGroup)
 
         Returns:
@@ -142,12 +146,13 @@ class ContinuousFairnessAlgorithm():
         groupSizesPercent = self.__rawDataByGroup.count().divide(groupSizes.sum())
 
         # compute general barycenter of all score distributions
-        total_bary = ot.bregman.barycenter(self.__rawDataPerGroupAsHistograms,
+        total_bary = ot.bregman.barycenter(group_histograms_raw,
                                            self.__lossMatrix,
                                            self.__regForOT,
                                            weights=groupSizesPercent.values,
                                            verbose=True,
                                            log=True)[0]
+        print("Sum of total barycenter: " + str(total_bary.sum()))
         if self.__plot:
             self.__plott(pd.DataFrame(total_bary),
                          'totalBarycenter.png',
@@ -156,7 +161,8 @@ class ContinuousFairnessAlgorithm():
         return total_bary
 
     def _get_group_barycenters(self, total_bary, group_histograms):
-        """compute barycenters between general barycenter and each score distribution (i.e. each social group)
+        """compute barycenters between general barycenter and each score distribution 
+        (i.e. each social group)
 
         Arguments:
             total_bary {ndarray} -- barycenter for whole dataset
@@ -166,14 +172,15 @@ class ContinuousFairnessAlgorithm():
             DataFrame -- barycenter for each group in columns
         """
 
-        #
         group_barycenters = pd.DataFrame(columns=self.__groupColumnNames)
-        # build 2-column matrix from group data and general barycenter
         for groupName in group_histograms:
-            groupMatrix = pd.concat([group_histograms[groupName], pd.Series(
-                total_bary)], axis=1)  # get corresponding theta
-            theta = self.__thetas[group_histograms.columns.get_loc(
-                groupName)]  # calculate barycenters
+            # build 2-column matrix from group data and general barycenter
+            groupMatrix = pd.concat([group_histograms[groupName],
+                                     pd.Series(total_bary)],
+                                    axis=1)
+            # get corresponding theta
+            theta = self.__thetas[group_histograms.columns.get_loc(groupName)]
+            # calculate barycenters
             weights = np.array([1 - theta, theta])
             group_barycenters[groupName] = ot.bregman.barycenter(groupMatrix,
                                                                  self.__lossMatrix,
@@ -196,15 +203,27 @@ class ContinuousFairnessAlgorithm():
 
         Returns:
             DataFrame -- fair scores that will replace raw scores in self.__rawDataByGroup,
-                         resulting frame is to be understood as follows: score at index 1 replaces 
-                         raw score 1
+                         resulting frame is to be understood as follows: fair score at index 1 replaces 
+                         raw score at index 1
                          TODO: rephrase that for better understanding
         """
 
-        plt.imshow(self.__lossMatrix)
-        plt.show()
         groupFairScores = pd.DataFrame(columns=self.__groupColumnNames)
         for groupName in self.__groupColumnNames:
+            # check that vectors are of same length
+            if group_histograms_raw[groupName].shape != group_barycenters[groupName].shape:
+                raise ValueError(
+                    "length of raw scores of group and group barycenters should be equal")
+            # check that AUCs of group histograms and group barycenters are equal
+            if group_histograms_raw[groupName].sum() != group_barycenters[groupName].sum():
+                raise ValueError(
+                    "L1-norm of the two vectors should be the same")
+
+            plt.clf()
+            plt.plot(group_histograms_raw[groupName])
+            plt.plot(group_barycenters[groupName])
+            plt.show()
+            # are the sums over all entries equal?
             ot_matrix = ot.emd(group_histograms_raw[groupName],
                                group_barycenters[groupName],
                                self.__lossMatrix)
@@ -221,7 +240,7 @@ class ContinuousFairnessAlgorithm():
             # results into a group fair score vector of length 100
 
             groupFairScores[groupName] = np.matmul(normalized_ot_matrix,
-                                                   self.__scoreValues.T)
+                                                   self.__bin_edges[1:].T)
 
         if self.__plot:
             self.__plott(groupFairScores,
@@ -324,7 +343,7 @@ class ContinuousFairnessAlgorithm():
                          xLabel="raw score",
                          yLabel="Density")
 
-        total_bary = self._getTotalBarycenter()
+        total_bary = self._getTotalBarycenter(group_histograms_raw)
         group_barycenters = self._get_group_barycenters(total_bary,
                                                         group_histograms_raw)
 

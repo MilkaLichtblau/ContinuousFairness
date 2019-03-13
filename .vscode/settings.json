@@ -1,3 +1,11 @@
 {
-    "python.linting.pylintEnabled": true
+    "editor.rulers": [
+        79,
+        120
+    ],
+    "python.linting.pylintEnabled": true,
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "autopep8",
+    "python.pythonPath": "/anaconda3/bin/python"
+    "python.envFile": "${workspaceFolder}/.env"
 }
