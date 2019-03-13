@@ -17,7 +17,7 @@ class ContinuousFairnessAlgorithm():
     TODO: rewrite algorithm with float scores only!!
     """
 
-    def __init__(self, rawData, groups, prot_attr, qual_attr, score_ranges, score_stepsize, thetas, regForOT, path='.', plot=False):
+    def __init__(self, rawData, groups, prot_attr, qual_attr, score_stepsize, thetas, regForOT, path='.', plot=False):
         """
         @param rawData:          pandas dataframe with scores per group, groups are not necessarily
                                  of the same size, i.e. data might contain NaNs
@@ -26,57 +26,72 @@ class ContinuousFairnessAlgorithm():
                                  example: [[white, male], [white, female], [hispanic, male], [hispanic, female]]
         @param prot_attr:        column names that are protected attributes
         @param qual_attr:        name of column that contains the scores
-        @param score_ranges:     tuple that contains the lower and upper most possible score
-        @param score_stepsize:   stepsize between two scores
+        @param score_stepsize:   
         @param thetas:           vector of parameters that determine how close a distribution is to be moved to
                                  the general barycenter. One theta per group.
                                  theta of 1 means that a group distribution is totally moved into the general
                                  barycenter
                                  theta of 0 means that a group distribution stays exactly as it is
         @param regForOT:         regularization parameter for optimal transport, see ot docs for details
+        
+        Arguments:
+            rawData {dataframe} -- contains data points as rows and features as columns
+            groups {[type]} -- [description]
+            prot_attr {[str]} -- [description]
+            qual_attr {[str]} -- [description]
+            score_stepsize {[int]} -- stepsize between two scores
+            thetas {[type]} -- [description]
+            regForOT {[type]} -- [description]
+        
+        Keyword Arguments:
+            path {str} -- [description] (default: {'.'})
+            plot {bool} -- [description] (default: {False})
         """
 
         self.__rawData = rawData
         self.__qualityAtribute = qual_attr
-        self.__protectedAttributes = prot_attr
-        self.__groups = groups  # TODO: das könnte man eleganter lösen, hier ist jetzt einiges doppelt und dreifach...nochmal refactoring machen
+        # self.__protectedAttributes = prot_attr
+        # self.__groups = groups  # TODO: das könnte man eleganter lösen, hier ist jetzt einiges doppelt und dreifach...nochmal refactoring machen
         self.__rawDataByGroup = self._getScoresByGroup(self.__rawData)
         self.__groupColumnNames = self.__rawDataByGroup.columns.values.tolist()
-        self.__groupNamesForPlots = ['Group ' + f'{index}' for index, _ in enumerate(self.__groupColumnNames)]
-        self.__score_values = np.arange(score_ranges[0], score_ranges[1] + score_stepsize, score_stepsize)
+        
+        # have all possible score values in an ndarray
+        self.__scoreValues = np.arange(rawData[qual_attr].min(), rawData[qual_attr].max() + score_stepsize, score_stepsize)
+        
         # calculate bin number for histograms and loss matrix size
-        self.__num_bins = int(len(self.__score_values))
-        leftMostEdge = self.__score_values[0] - (self.__score_values[1] - self.__score_values[0])
-        self.__bin_edges = np.insert(self.__score_values, 0, leftMostEdge)
+        self.__num_bins = int(len(self.__scoreValues))
+        leftMostEdge = self.__scoreValues[0] - (self.__scoreValues[1] - self.__scoreValues[0])
+        self.__bin_edges = np.insert(self.__scoreValues, 0, leftMostEdge)
+        
         # calculate loss matrix
         self.__lossMatrix = ot.utils.dist0(self.__num_bins)
         self.__lossMatrix /= self.__lossMatrix.max()
         self.__thetas = thetas
         self.__regForOT = regForOT
 
-        self.__fairData = pd.DataFrame()
-        self.__rawDataPerGroupAsHistograms = pd.DataFrame(columns=self.__groupColumnNames)
-        self.__fairDataAsHistograms = pd.DataFrame(columns=self.__groupColumnNames)
+        self.__rawDataPerGroupAsHistograms = self._dataToHistograms(self.__rawDataByGroup, self.__bin_edges)
+        # self.__fairData = pd.DataFrame()
+        # self.__fairDataAsHistograms = pd.DataFrame(columns=self.__groupColumnNames)
 
+        self.__groupNamesForPlots = ['Group ' + f'{index}' for index, _ in enumerate(self.__groupColumnNames)]
         self.__plotPath = path
         self.__plot = plot
 
     def _getScoresByGroup(self, dataset):
         """
-        takes a dataset with one item per row and each item has qualifying as well as sensitive
-        attributes.
+        takes a dataset with one data point per row
+        each data point has a qualifying as well as >= 1 sensitive attribute column
         takes all values from column qual_attr and resorts data such that result contains all scores from
-        qual_attr in one column per group of sensitive attributes.
-
-        TODO: correct doc
-
-        @param groups:                 all possible groups in data as dataframe. One row contains manifestations
-                                           of protected attributes, hence represents a group
-                                           example: [[white, male], [white, female], [hispanic, male], [hispanic, female]]
-        @param qual_attr:              name of column that contains the quality attribute (only one possible)
-
-        @return: dataframe with group labels as column names and scores per group as column values
+        qual_attr in one column per group of sensitive attributes.      
+        
+        Arguments:
+            dataset {[dataframe]} -- raw data with one data point per row
+        
+        Returns:
+            [dataframe] -- group labels as column names and scores as column values, 
+                           columns can contain NaNs if group sizes are not equal
         """
+
         protectedAttributes = self.__groups.columns.values
         result = pd.DataFrame(dtype=float)
         # select all rows that belong to one group
@@ -91,9 +106,20 @@ class ContinuousFairnessAlgorithm():
             result = pd.concat([result, resultCol], axis=1)
         return result
 
-    def _getDataAsHistograms(self, data, histograms, bin_edges):
-        # get histogram from each column and save to new dataframe
-        # gets as parameters pointers to raw data and new dataframe where to save the histograms
+    def _dataToHistograms(self, data, bin_edges):
+        """
+        creates histogram for each column in 'data' 
+        excludes nans
+        
+        Arguments:
+            data {pd.DataFrame} -- reference to raw data
+            bin_edges {ndarray} -- bins for histogram calculation
+        
+        Raises:
+            ValueError -- histograms are to be of the same length each
+                          hence result cannot contain NaNs
+        """
+        histograms = pd.DataFrame(columns=self.__groupColumnNames)
         for colName in data.columns:
             colNoNans = pd.DataFrame(data[colName][~np.isnan(data[colName])])
             colAsHist = np.histogram(colNoNans[colName], bins=bin_edges, density=True)[0]
@@ -102,7 +128,15 @@ class ContinuousFairnessAlgorithm():
         if histograms.isnull().values.any():
             raise ValueError("Histogram data contains nans")
 
+        return histograms
+
     def _getTotalBarycenter(self):
+        """calculates barycenter of whole dataset (self.__rawDataByGroup)
+        
+        Returns:
+            ndarray -- barycenter of whole dataset
+        """
+
         # calculate group sizes in total and percent
         groupSizes = self.__rawDataByGroup.count()
         groupSizesPercent = self.__rawDataByGroup.count().divide(groupSizes.sum())
@@ -122,7 +156,16 @@ class ContinuousFairnessAlgorithm():
         return total_bary
 
     def _get_group_barycenters(self, total_bary):
-        # compute barycenters between general barycenter and each score distribution (i.e. each social group)
+        """compute barycenters between general barycenter and each score distribution (i.e. each social group) 
+        
+        Arguments:
+            total_bary {ndarray} -- barycenter for whole dataset
+        
+        Returns:
+            DataFrame -- barycenter for each group in columns
+        """
+
+        # 
         group_barycenters = pd.DataFrame(columns=self.__groupColumnNames)
         for groupName in self.__rawDataPerGroupAsHistograms:  # build 2-column matrix from group data and general barycenter
             groupMatrix = pd.concat([self.__rawDataPerGroupAsHistograms[groupName], pd.Series(total_bary)], axis=1)  # get corresponding theta
@@ -142,7 +185,16 @@ class ContinuousFairnessAlgorithm():
         return group_barycenters
 
     def _calculateFairReplacementStrategy(self, group_barycenters):
-        # calculate new scores from group barycenters
+        """calculate mapping from raw score to fair score using group barycenters
+        
+        Arguments:
+            group_barycenters {DataFrame} -- group barycenters, one for each social group per column
+
+        Returns:
+            DataFrame -- fair scores that will replace raw scores in self.__rawDataByGroup,
+                         resulting frame is to be understood as follows: score at index 1 replaces raw score 1
+                         TODO: rephrase that for better understanding
+        """
         groupFairScores = pd.DataFrame(columns=self.__groupColumnNames)
         for groupName in self.__groupColumnNames:
             ot_matrix = ot.emd(self.__rawDataPerGroupAsHistograms[groupName],
@@ -159,7 +211,7 @@ class ContinuousFairnessAlgorithm():
             # this contains a vector per group with len(score_values) entries (e.g. a score range from 1 to 100
             # results into a group fair score vector of length 100
 
-            groupFairScores[groupName] = np.matmul(normalized_ot_matrix, self.__score_values.T)
+            groupFairScores[groupName] = np.matmul(normalized_ot_matrix, self.__scoreValues.T)
 
         if self.__plot:
             self.__plott(groupFairScores,
@@ -219,7 +271,7 @@ class ContinuousFairnessAlgorithm():
             plt.savefig(self.__plotPath + 'fairScoreDistributionPerGroup.png', dpi=100, bbox_inches='tight')
 
             bin_edges = np.linspace(groupFairScores.min().min(), groupFairScores.max().max(), int(self.__num_bins))
-            self._getDataAsHistograms(fairDataPerGroup, self.__fairDataAsHistograms, bin_edges)
+            self._dataToHistograms(fairDataPerGroup, self.__fairDataAsHistograms, bin_edges)
             self.__plott(self.__fairDataAsHistograms,
                          'fairScoresAsHistograms.png',
                          xLabel="fair score",
@@ -245,7 +297,7 @@ class ContinuousFairnessAlgorithm():
         TODO: write that algorithm assumes finite float scores, otherwise the algorithm doesn't work
         """
 
-        self._getDataAsHistograms(self.__rawDataByGroup, self.__rawDataPerGroupAsHistograms, self.__bin_edges)
+        self._dataToHistograms(self.__rawDataByGroup, self.__rawDataPerGroupAsHistograms, self.__bin_edges)
         print(self.__rawDataPerGroupAsHistograms.idxmax())
         if self.__plot:
             self.__plott(self.__rawDataPerGroupAsHistograms,
