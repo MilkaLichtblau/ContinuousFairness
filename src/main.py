@@ -126,32 +126,26 @@ def main():
                             'score')
         elif args.run[0] == 'lsat_gender':
             # TODO: run experiments also with ZFYA
-            rerank_with_cfa(score_ranges,
-                            score_stepsize,
+            rerank_with_cfa(score_stepsize,
                             thetas,
                             result_dir,
                             '../data/LSAT/gender/genderLSAT.csv',
                             '../data/LSAT/gender/genderGroups.csv',
-                            'LSAT',
-                            ["sex"])
+                            'LSAT')
         elif args.run[0] == 'lsat_race':
-            rerank_with_cfa(score_ranges,
-                            score_stepsize,
+            rerank_with_cfa(score_stepsize,
                             thetas,
                             result_dir,
                             '../data/LSAT/allRace/allEthnicityLSAT.csv',
                             '../data/LSAT/allRace/allEthnicityGroups.csv',
-                            'LSAT',
-                            ["race"])
+                            'LSAT')
         elif args.run[0] == 'lsat_all':
-            rerank_with_cfa(score_ranges,
-                            score_stepsize,
+            rerank_with_cfa(score_stepsize,
                             thetas,
                             result_dir,
                             '../data/LSAT/all/allInOneLSAT.csv',
                             '../data/LSAT/all/allInOneGroups.csv',
-                            'LSAT',
-                            ["sex", "race"])
+                            'LSAT')
         else:
             parser.error(
                 "unknown dataset. Options are 'synthetic', 'lsat_gender', 'lsat_race, 'lsat_all'")
