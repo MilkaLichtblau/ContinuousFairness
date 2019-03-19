@@ -77,13 +77,18 @@ def rerank_with_cfa(score_stepsize, thetas, result_dir, pathToData,
                                       regForOT,
                                       path=result_dir,
                                       plot=True)
-    cfa.continuousFairnessAlgorithm()
+    fairData = cfa.run()
+    fairData.to_csv(result_dir + "fairData.csv")
 
 
 def parseThetas(thetaString):
     thetas = np.array(thetaString.split(","))
     floatThetas = [float(i) for i in thetas]
     return floatThetas
+
+
+def evaluate(pathToFairData, minimumGroupProportions):
+    data = pd.read_csv(pathToFairData, sep=',')
 
 
 def main():
@@ -100,12 +105,10 @@ def main():
                         metavar=('DATASET', 'STEPSIZE', 'THETAS', 'DIRECTORY'),
                         help="runs continuous fairness algorithm for given DATASET with \
                               STEPSIZE and THETAS and stores results into DIRECTORY")
-    parser.add_argument("--dir",
+    parser.add_argument("--evaluate",
                         nargs=1,
-                        type=str,
-                        default="../data/",
-                        metavar='DIRECTORY',
-                        help="specifies directory to store the results")
+                        choices=['synthetic', 'lsat'],
+                        help="evaluates all experiments for respective dataset")
 
     args = parser.parse_args()
 
@@ -149,6 +152,11 @@ def main():
         else:
             parser.error(
                 "unknown dataset. Options are 'synthetic', 'lsat_gender', 'lsat_race, 'lsat_all'")
+    elif args.evaluate == "synthetic":
+        evaluate()
+        raise NotImplementedError
+    elif args.evaluate == "lsat":
+        raise NotImplementedError
     else:
         parser.error("choose one command line option")
 
