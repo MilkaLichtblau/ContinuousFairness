@@ -5,7 +5,6 @@ Created on Sep 27, 2018
 '''
 
 import ot
-import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -44,21 +43,12 @@ class ContinuousFairnessAlgorithm():
         self.__rawDataByGroup = self._getScoresByGroup(self.__rawData)
         self.__groupColumnNames = self.__rawDataByGroup.columns.values.tolist()
 
-        # have all possible score values in an ndarray
-        # self.__scoreValues = np.arange(rawData[qual_attr].min() - score_stepsize,
-        #                                rawData[qual_attr].max() +
-        #                                score_stepsize,
-        #                                score_stepsize)
-
         # calculate bin number for histograms and loss matrix size
         self.__bin_edges = np.arange(rawData[qual_attr].min() - score_stepsize,
                                      rawData[qual_attr].max() +
                                      score_stepsize,
                                      score_stepsize)
         self.__num_bins = int(len(self.__bin_edges) - 1)
-        # leftMostEdge = self.__scoreValues[0] - \
-        #     (self.__scoreValues[1] - self.__scoreValues[0])
-        # self.__bin_edges = np.insert(self.__scoreValues, 0, leftMostEdge)
 
         # calculate loss matrix
         self.__lossMatrix = ot.utils.dist0(self.__num_bins)
@@ -66,11 +56,7 @@ class ContinuousFairnessAlgorithm():
         self.__thetas = thetas
         self.__regForOT = regForOT
 
-        # self.__rawDataPerGroupAsHistograms = self._dataToHistograms(
-        #     self.__rawDataByGroup, self.__bin_edges)
-        # self.__fairData = pd.DataFrame()
-        # self.__fairDataAsHistograms = pd.DataFrame(columns=self.__groupColumnNames)
-
+        # have some convenience for plots
         self.__groupNamesForPlots = [
             'Group ' + f'{index}' for index, _ in enumerate(self.__groupColumnNames)]
         self.__plotPath = path
@@ -214,21 +200,12 @@ class ContinuousFairnessAlgorithm():
             if group_histograms_raw[groupName].shape != group_barycenters[groupName].shape:
                 raise ValueError(
                     "length of raw scores of group and group barycenters should be equal")
-            # check that AUCs of group histograms and group barycenters are equal
-#             if group_histograms_raw[groupName].sum() != group_barycenters[groupName].sum():
-#                 raise ValueError(
-#                     "L1-norm of the two vectors should be the same")
 
-            plt.clf()
-            plt.plot(group_histograms_raw[groupName])
-            plt.plot(group_barycenters[groupName])
-            plt.show()
-            # are the sums over all entries equal?
             ot_matrix = ot.emd(group_histograms_raw[groupName],
                                group_barycenters[groupName],
                                self.__lossMatrix)
-            plt.imshow(ot_matrix)
-            plt.show()
+#             plt.imshow(ot_matrix)
+#             plt.show()
             # normalize OT matrix such that each row sums up to 1
             norm_vec = np.matmul(ot_matrix, np.ones(ot_matrix.shape[0]))
             inverse_norm_vec = np.reciprocal(norm_vec)
@@ -236,7 +213,7 @@ class ContinuousFairnessAlgorithm():
             norm_matrix = np.diag(inverse_norm_vec)
             normalized_ot_matrix = np.matmul(norm_matrix, ot_matrix)
 
-            # this contains a vector per group with len(score_values) entries (e.g. a score range from 1 to 100
+            # this contains a vector per group with len(score_values) entries (e.g. a score range from 1 to 100)
             # results into a group fair score vector of length 100
 
             groupFairScores[groupName] = np.matmul(normalized_ot_matrix,
@@ -280,12 +257,15 @@ class ContinuousFairnessAlgorithm():
                 replaced.at[replaceAtIndex, colName] = fairScore
             return replaced
 
-        self.__fairData = self.__rawData.copy()
-        self.__fairData = self.__fairData.groupby(list(self.__groups.columns.values),
+        fairData = self.__rawData.copy()
+        fairData = fairData.groupby(list(self.__groups.columns.values),
                                                   as_index=False,
                                                   sort=False).apply(replace,
                                                                     colName=self.__qualityAtribute)
-        self.__fairData = self.__fairData.reset_index(drop=True)
+        fairData = fairData.reset_index(drop=True)
+        # sort fair data by score values, using quicksort. This means that ties are not handled
+        # explicitly, but rather quicksort just stops once the scores are in the right order
+        fairData = fairData.sort_values('score', ascending=False)
 
         if self.__plot:
             mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3,
@@ -295,7 +275,7 @@ class ContinuousFairnessAlgorithm():
             mpl.rcParams['pdf.use14corefonts'] = True
             mpl.rcParams['text.usetex'] = True
 
-            fairDataPerGroup = self._getScoresByGroup(self.__fairData)
+            fairDataPerGroup = self._getScoresByGroup(fairData)
             ax = fairDataPerGroup.plot.kde()
             ax.legend(bbox_to_anchor=(1.05, 1), loc=2,
                       borderaxespad=0., labels=self.__groupNamesForPlots)
@@ -303,8 +283,9 @@ class ContinuousFairnessAlgorithm():
             plt.savefig(self.__plotPath + 'fairScoreDistributionPerGroup.png',
                         dpi=100, bbox_inches='tight')
 
-            bin_edges = np.linspace(groupFairScores.min().min(
-            ), groupFairScores.max().max(), int(self.__num_bins))
+            bin_edges = np.linspace(groupFairScores.min().min(),
+                                    groupFairScores.max().max(),
+                                    int(self.__num_bins))
             group_histograms_fair = self._dataToHistograms(fairDataPerGroup,
                                                            bin_edges)
             self.__plott(group_histograms_fair,
@@ -312,7 +293,7 @@ class ContinuousFairnessAlgorithm():
                          xLabel="fair score",
                          yLabel="Density")
 
-        return self.__fairData
+        return fairData
 
     def __plott(self, dataframe, filename, xLabel="", yLabel=""):
         mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3,
@@ -329,14 +310,13 @@ class ContinuousFairnessAlgorithm():
         ax.set_ylabel(yLabel)
         plt.savefig(self.__plotPath + filename, dpi=100, bbox_inches='tight')
 
-    def continuousFairnessAlgorithm(self):
+    def run(self):
         """
         TODO: write that algorithm assumes finite float scores, otherwise the algorithm doesn't work
         """
 
         group_histograms_raw = self._dataToHistograms(self.__rawDataByGroup,
                                                       self.__bin_edges)
-        print(group_histograms_raw.idxmax())
         if self.__plot:
             self.__plott(group_histograms_raw,
                          'rawScoresAsHistograms.png',
@@ -349,4 +329,4 @@ class ContinuousFairnessAlgorithm():
 
         fairScoreReplacementStrategy = self._calculateFairReplacementStrategy(
             group_barycenters, group_histograms_raw)
-        self._replaceRawByFairScores(fairScoreReplacementStrategy)
+        return self._replaceRawByFairScores(fairScoreReplacementStrategy)
