@@ -10,8 +10,6 @@ import argparse
 
 from data_preparation import synthetic, LSAT
 from visualization.plots import plotKDEPerGroup
-from util.util import scoresByGroups
-# from cfa import cfa
 from cfa.cfa import ContinuousFairnessAlgorithm
 
 
