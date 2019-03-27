@@ -6,7 +6,6 @@ Created on Oct 3, 2017
 '''
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import random
 import itertools
 import uuid
