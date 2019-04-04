@@ -76,15 +76,15 @@ class SyntheticDatasetCreator(object):
         self.__dataset['uuid'] = [uuid.uuid4()
                                   for _ in range(len(self.__dataset.index))]
 
+    def sortByColumn(self, colName):
+        self.__dataset.sort_values(by=colName, ascending=False, inplace=True)
+
     def createScoresNormalDistribution(self):
         """
         @param nonProtectedAttributes:     a string array that contains the names of the non-protected
                                            features
         """
 
-#         if len(mu_diff) != len(self.groups) or len(sigma) != len(self.groups):
-#             raise ValueError("not enough mean and standard deviation values for all groups. Check \
-#                               size of self.groups for correct number")
         def score(x, colName):
             mu = 10 * np.random.uniform()
             sigma = np.random.uniform()
