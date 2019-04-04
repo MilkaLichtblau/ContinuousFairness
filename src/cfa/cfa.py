@@ -1,9 +1,3 @@
-'''
-Created on Sep 27, 2018
-
-@author: meike.zehlike
-'''
-
 import ot
 import numpy as np
 import pandas as pd
@@ -40,7 +34,7 @@ class ContinuousFairnessAlgorithm():
         self.__rawData = rawData
         self.__qualityAtribute = qual_attr
         self.__groups = groups
-        self.__rawDataByGroup = self._getScoresByGroup(self.__rawData)
+        self.__rawDataByGroup = self._getScoresByGroup(self.__rawData, self.__qualityAtribute)
         self.__groupColumnNames = self.__rawDataByGroup.columns.values.tolist()
 
         # calculate bin number for histograms and loss matrix size
@@ -62,7 +56,7 @@ class ContinuousFairnessAlgorithm():
         self.__plotPath = path
         self.__plot = plot
 
-    def _getScoresByGroup(self, dataset):
+    def _getScoresByGroup(self, dataset, scoreColName):
         """
         takes a dataset with one data point per row
         each data point has a qualifying as well as >= 1 sensitive attribute column
@@ -71,6 +65,7 @@ class ContinuousFairnessAlgorithm():
 
         Arguments:
             dataset {[dataframe]} -- raw data with one data point per row
+            scoreColName {[string]} -- name of column that contains scores
 
         Returns:
             [dataframe] -- group labels as column names and scores as column values,
@@ -86,7 +81,7 @@ class ContinuousFairnessAlgorithm():
             for prot_attr in protectedAttributes:
                 copy = copy.loc[(copy[prot_attr] == group.get(prot_attr))]
             resultCol = pd.DataFrame(
-                data=copy[self.__qualityAtribute].values, columns=[colName])
+                data=copy[scoreColName].values, columns=[colName])
             # needs concat to avoid data loss in case new resultCol is longer than already existing result
             # dataframe
             result = pd.concat([result, resultCol], axis=1)
@@ -244,28 +239,26 @@ class ContinuousFairnessAlgorithm():
             name += "]"
             return name
 
-        def replace(rawData, colName):
-            rawScores = rawData[colName]
+        def replace(rawData, oldValue, newValue):
+            rawScores = rawData[oldValue]
             groupName = buildGroupNameFromValues(rawData.head(1))
-            replaced = rawData.copy()
+            # replaced = rawData.copy()
             fairScores = groupFairScores[groupName]
             for index, fairScore in fairScores.iteritems():
                 range_left = self.__bin_edges[index]
                 range_right = self.__bin_edges[index + 1]
                 replaceAtIndex = (rawScores > range_left) & (
                     rawScores <= range_right)
-                replaced.at[replaceAtIndex, colName] = fairScore
-            return replaced
+                rawData.at[replaceAtIndex, newValue] = fairScore
+            return rawData
 
-        fairData = self.__rawData.copy()
-        fairData = fairData.groupby(list(self.__groups.columns.values),
+        self.__rawData = self.__rawData.groupby(list(self.__groups.columns.values),
                                                   as_index=False,
                                                   sort=False).apply(replace,
-                                                                    colName=self.__qualityAtribute)
-        fairData = fairData.reset_index(drop=True)
+                                                                    oldValue=self.__qualityAtribute,
+                                                                    newValue="fairScore")
         # sort fair data by score values, using quicksort. This means that ties are not handled
         # explicitly, but rather quicksort just stops once the scores are in the right order
-        fairData = fairData.sort_values('score', ascending=False)
 
         if self.__plot:
             mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3,
@@ -275,7 +268,7 @@ class ContinuousFairnessAlgorithm():
             mpl.rcParams['pdf.use14corefonts'] = True
             mpl.rcParams['text.usetex'] = True
 
-            fairDataPerGroup = self._getScoresByGroup(fairData)
+            fairDataPerGroup = self._getScoresByGroup(self.__rawData, 'fairScore')
             ax = fairDataPerGroup.plot.kde()
             ax.legend(bbox_to_anchor=(1.05, 1), loc=2,
                       borderaxespad=0., labels=self.__groupNamesForPlots)
@@ -293,7 +286,7 @@ class ContinuousFairnessAlgorithm():
                          xLabel="fair score",
                          yLabel="Density")
 
-        return fairData
+        return self.__rawData
 
     def __plott(self, dataframe, filename, xLabel="", yLabel=""):
         mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3,
