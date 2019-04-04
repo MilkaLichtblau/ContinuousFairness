@@ -10,6 +10,7 @@ import random
 import itertools
 import uuid
 from scipy.stats import truncnorm
+from xlrd.book import colname
 
 
 class SyntheticDatasetCreator(object):
@@ -77,7 +78,7 @@ class SyntheticDatasetCreator(object):
                                   for _ in range(len(self.__dataset.index))]
 
     def sortByColumn(self, colName):
-        self.__dataset.sort_values(by=colName, ascending=False, inplace=True)
+        self.__dataset = self.__dataset.rename_axis('idx').sort_values(by=[colName, 'idx'], ascending=[False, True])
 
     def createScoresNormalDistribution(self):
         """
