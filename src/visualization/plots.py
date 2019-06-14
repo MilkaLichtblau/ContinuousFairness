@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from util import util
 
 
-def plotKDEPerGroup(data, groups, score_attr, filename, labels):
+def plotKDEPerGroup(data, groups, score_attr, filename, colNames=None):
 
     mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3, 'lines.markersize': 15, 'font.family':'Times New Roman'})
     # avoid type 3 (i.e. bitmap) fonts in figures
@@ -18,6 +18,8 @@ def plotKDEPerGroup(data, groups, score_attr, filename, labels):
     mpl.rcParams['text.usetex'] = True
 
     scoresPerGroup = util.scoresByGroups(data, groups, score_attr)
+    if colNames is not None:
+        scoresPerGroup = scoresPerGroup.rename(colNames, axis='columns')
     scoresPerGroup.plot.kde()
     score_attr = score_attr.replace('_', '\_')
 

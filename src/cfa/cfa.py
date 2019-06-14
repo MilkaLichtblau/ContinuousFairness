@@ -11,7 +11,7 @@ class ContinuousFairnessAlgorithm():
     TODO: rewrite algorithm with float scores only!!
     """
 
-    def __init__(self, rawData, groups, qual_attr, score_stepsize, thetas, regForOT, path='.', plot=False):
+    def __init__(self, rawData, groups, group_names, qual_attr, score_stepsize, thetas, regForOT, path='.', plot=False):
         """
         Arguments:
             rawData {dataframe} -- contains data points as rows and features as columns
@@ -51,8 +51,7 @@ class ContinuousFairnessAlgorithm():
         self.__regForOT = regForOT
 
         # have some convenience for plots
-        self.__groupNamesForPlots = [
-            'Group ' + f'{index}' for index, _ in enumerate(self.__groupColumnNames)]
+        self.__groupNamesForPlots = self.__rawDataByGroup.rename(group_names, axis='columns')
         self.__plotPath = path
         self.__plot = plot
 
@@ -224,7 +223,12 @@ class ContinuousFairnessAlgorithm():
 
     def _replaceRawByFairScores(self, groupFairScores):
         '''
-        TODO: write how raw scores are replaced by fair scores from groupFairScores matrix
+        replaces raw scores of individuals by their fair representation given in @groupFairScores
+        fair scores are given column-wise, with one column for each group and matchings are identified
+        by their indexes
+
+        example: for a column, the original score at index 0 in @self.__bin_edges will be replaced
+                 with the fair score at index 0 in @groupFairScores
         '''
 
         def buildGroupNameFromValues(dataRow):
@@ -242,7 +246,6 @@ class ContinuousFairnessAlgorithm():
         def replace(rawData, oldValue, newValue):
             rawScores = rawData[oldValue]
             groupName = buildGroupNameFromValues(rawData.head(1))
-            # replaced = rawData.copy()
             fairScores = groupFairScores[groupName]
             for index, fairScore in fairScores.iteritems():
                 range_left = self.__bin_edges[index]
@@ -257,8 +260,6 @@ class ContinuousFairnessAlgorithm():
                                                   sort=False).apply(replace,
                                                                     oldValue=self.__qualityAtribute,
                                                                     newValue="fairScore")
-        # sort fair data by score values, using quicksort. This means that ties are not handled
-        # explicitly, but rather quicksort just stops once the scores are in the right order
 
         if self.__plot:
             mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3,

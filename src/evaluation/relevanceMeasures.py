@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def pak(k, ranking, originalRanking):
@@ -16,10 +15,6 @@ def pak(k, ranking, originalRanking):
     # cut the ranking at the given truncation point k
     pakRanking = ranking[:k]
     pakOrig = originalRanking[:k]
-
-    plt.plot(ranking)
-    plt.plot(originalRanking)
-    plt.show()
 
     # check if docIDs at current position occur in original and in new ranking
     pak = len([docId for docId in pakRanking if docId in pakOrig])
