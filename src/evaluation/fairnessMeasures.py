@@ -16,9 +16,12 @@ def groupPercentageAtK(ranking, groups):
     """
 
     rankingLength = ranking.shape[0]
-    numGroups = groups.shape[0]
     groupCounts = ranking.groupby(list(groups)).size().reset_index(name='counts')
-    while groupCounts.shape[0] != numGroups:
-        rowWithZeros = pd.DataFrame([np.zeros(groupCounts.shape[1])], columns=list(groupCounts))
-        groupCounts = groupCounts.append(rowWithZeros, ignore_index=True)
+    groupCounts = groupCounts.merge(groups, how="outer")
+    groupCounts = groupCounts.fillna(0)
+
+    allTrueArray = np.ones(len(list(groups)), dtype=bool)
+    groupCounts = groupCounts.sort_values(list(groups), ascending=allTrueArray)
+
+#     print(groupCounts)
     return (groupCounts['counts'] / rankingLength).values.transpose()

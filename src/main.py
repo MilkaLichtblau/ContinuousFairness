@@ -271,10 +271,12 @@ def main():
         if args.evaluate[0] == 'lsat_race':
             qualAttr = 'LSAT'
             groups = pd.read_csv('../data/LSAT/allRace/allEthnicityGroups.csv', sep=',')
+            groupNames = ["White", "Amerindian", "Asian", "Black", "Hispanic", "Mexican", "Other", "Puertorican"]
 
         if args.evaluate[0] == 'lsat_gender':
             qualAttr = 'LSAT'
             groups = pd.read_csv('../data/LSAT/gender/genderGroups.csv', sep=',')
+            groupNames = ["Male", "Female"]
 
         data = pd.read_csv(pathToCFAResult, sep=',')
         oldPosColumn = data.index.values
@@ -283,7 +285,7 @@ def main():
         fairSorting['oldPos'] = oldPosColumn
         fairSorting = fairSorting.reset_index(drop=True)
 
-        score_stepsize = 10000
+        score_stepsize = 10
 
         evaluateRelevance(fairSorting, result_dir, qualAttr, score_stepsize, calcResult=1)
         evaluateFairness(fairSorting, groups, groupNames, result_dir, score_stepsize, calcResult=1)
