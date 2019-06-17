@@ -137,9 +137,11 @@ def evaluateRelevance(data, result_dir, qualAttr, stepsize, calcResult=0):
     ax = performanceDataframe.plot(y=['ndcg', 'P$@$k'],
                                    kind='line',
                                    use_index=True,
-                                   yticks=np.arange(0.4, 1.1, 0.1),
+                                   # yticks=np.arange(0.4, 1.1, 0.1),
                                    rot=45)
-    ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)  # , labels=self.__groupNamesForPlots)
+    ax.legend(bbox_to_anchor=(1.05, 1),
+              loc=2,
+              borderaxespad=0.)  # , labels=self.__groupNamesForPlots)
     ax.set_xlabel("ranking position")
     ax.set_ylabel("relevance score")
     plt.savefig(result_dir + "relevanceEvaluation.png", dpi=100, bbox_inches='tight')
@@ -287,8 +289,8 @@ def main():
 
         score_stepsize = 10
 
-        evaluateRelevance(fairSorting, result_dir, qualAttr, score_stepsize, calcResult=1)
-        evaluateFairness(fairSorting, groups, groupNames, result_dir, score_stepsize, calcResult=1)
+        evaluateRelevance(fairSorting, result_dir, qualAttr, score_stepsize, calcResult=0)
+        evaluateFairness(fairSorting, groups, groupNames, result_dir, score_stepsize, calcResult=0)
     else:
         parser.error("choose one command line option")
 
