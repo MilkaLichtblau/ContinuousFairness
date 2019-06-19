@@ -10,7 +10,6 @@ import random
 import itertools
 import uuid
 from scipy.stats import truncnorm
-from xlrd.book import colname
 
 
 class SyntheticDatasetCreator(object):
@@ -73,8 +72,8 @@ class SyntheticDatasetCreator(object):
         self.__createCategoricalProtectedAttributes(
             attributeNamesAndCategories, size)
 
-        # generate ID column
-        self.__dataset['uuid'] = [uuid.uuid4()
+        # generate ID column with 128-bit integer IDs
+        self.__dataset['uuid'] = [uuid.uuid1().int >> 64
                                   for _ in range(len(self.__dataset.index))]
 
     def sortByColumn(self, colName):
