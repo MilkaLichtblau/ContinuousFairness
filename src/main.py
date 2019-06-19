@@ -26,14 +26,6 @@ def createSyntheticData(size):
 
 def createLSATDatasets():
     creator = LSAT.LSATCreator('../data/LSAT/law_data.csv.xlsx')
-#     # gender and ethnicity in one dataset
-#     creator.prepareAllInOneData()
-#     creator.writeToCSV('../data/LSAT/all/allInOneLSAT.csv',
-#                        '../data/LSAT/all/allInOneGroups.csv')
-#     plotKDEPerGroup(creator.dataset, creator.groups, 'LSAT',
-#                     '../data/LSAT/all/scoreDistributionPerGroup_All_LSAT', '')
-#     plotKDEPerGroup(creator.dataset, creator.groups, 'ZFYA',
-#                     '../data/LSAT/all/scoreDistributionPerGroup_All_ZFYA', '')
 
     # all ethnicity in one dataset
     creator.prepareAllRaceData()
@@ -94,26 +86,26 @@ def parseThetas(thetaString):
     return floatThetas
 
 
-def evaluateRelevance(data, result_dir, qualAttr, stepsize, calcResult=0):
+def evaluateRelevance(origData, fairData, result_dir, qualAttr, stepsize, calcResult=0):
     """
     @param calcResult: if 1, result dataframe containing all measures is calculated, then stored to disk
                        if 0, results are read from disk and only new plots are generated
     """
 
     if calcResult:
-        ndcgAtK = np.empty(int(math.ceil(data.shape[0] / stepsize)))
-        precisionAtK = np.empty(int(math.ceil(data.shape[0] / stepsize)))
-        kAtK = np.empty(int(math.ceil(data.shape[0] / stepsize)))
+        ndcgAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
+        precisionAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
+        kAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
         index = 0
-        for k in range(0, data.shape[0], stepsize):
+        for k in range(0, fairData.shape[0], stepsize):
             print(k)
             # relevance measures
             np.put(ndcgAtK,
                    index,
-                   ndcg_score(data[qualAttr].values, data['fairScore'].values, k, gains="linear"))
+                   ndcg_score(origData[qualAttr].values, fairData['fairScore'].values, k, gains="linear"))
             np.put(precisionAtK,
                    index,
-                   pak(k + 1, data['newPos'].values, data['oldPos'].values))
+                   pak(k + 1, origData['uuid'].values, fairData['uuid'].values))
             np.put(kAtK,
                    index,
                    k)
@@ -204,8 +196,8 @@ def main():
                         help="runs continuous fairness algorithm for given DATASET with \
                               STEPSIZE and THETAS and stores results into DIRECTORY")
     parser.add_argument("--evaluate",
-                        nargs=2,
-                        metavar=('DATASET', 'RESULT DIRECTORY'),
+                        nargs=3,
+                        metavar=('DATASET', 'PATH TO ORIG DATASET', 'RESULT DATASET'),
                         help="evaluates all experiments for respective dataset and \
                               stores results into RESULT DIRECTORY")
 
@@ -263,7 +255,8 @@ def main():
         else:
             parser.error("unknown dataset. Options are 'synthetic', 'lsat_gender', 'lsat_race'")
     elif args.evaluate:
-        pathToCFAResult = args.evaluate[1]
+        pathToOrigData = args.evaluate[1]
+        pathToCFAResult = args.evaluate[2]
         result_dir = os.path.dirname(pathToCFAResult) + '/'
         if args.evaluate[0] == 'synthetic':
             qualAttr = 'score'
@@ -280,17 +273,21 @@ def main():
             groups = pd.read_csv('../data/LSAT/gender/genderGroups.csv', sep=',')
             groupNames = ["Male", "Female"]
 
+        origData = pd.read_csv(pathToOrigData, sep=',')
+        origData = origData.sort_values(by=[qualAttr, 'uuid'], ascending=[False, True])
+        origData = origData.reset_index(drop=True)
+
         data = pd.read_csv(pathToCFAResult, sep=',')
-        oldPosColumn = data.index.values
-        fairSorting = data.rename_axis('idx').sort_values(by=['fairScore', 'idx'], ascending=[False, True])
-        fairSorting['newPos'] = fairSorting.index
-        fairSorting['oldPos'] = oldPosColumn
+#         oldPosColumn = data.index.values
+        fairSorting = data.sort_values(by=['fairScore', 'uuid'], ascending=[False, True])
+#         fairSorting['newPos'] = fairSorting.index
+#         fairSorting['oldPos'] = oldPosColumn
         fairSorting = fairSorting.reset_index(drop=True)
 
-        score_stepsize = 10
+        score_stepsize = 100
 
-        evaluateRelevance(fairSorting, result_dir, qualAttr, score_stepsize, calcResult=0)
-        evaluateFairness(fairSorting, groups, groupNames, result_dir, score_stepsize, calcResult=0)
+        evaluateRelevance(origData, fairSorting, result_dir, qualAttr, score_stepsize, calcResult=1)
+        evaluateFairness(fairSorting, groups, groupNames, result_dir, score_stepsize, calcResult=1)
     else:
         parser.error("choose one command line option")
 

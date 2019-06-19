@@ -17,7 +17,7 @@ def pak(k, ranking, originalRanking):
     pakOrig = originalRanking[:k]
 
     # check if docIDs at current position occur in original and in new ranking
-    pak = len([docId for docId in pakRanking if docId in pakOrig])
+    pak = len(set(pakRanking) & set(pakOrig))
 
     # discount with truncation point
     pak = pak / k
