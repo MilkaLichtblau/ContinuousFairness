@@ -115,9 +115,9 @@ def evaluateRelevance(origData, fairData, result_dir, qualAttr, stepsize, calcRe
         performanceData = np.stack((kAtK, ndcgAtK, precisionAtK), axis=-1)
         performanceDataframe = pd.DataFrame(performanceData, columns=['pos', 'ndcg', 'P$@$k'])
         performanceDataframe = performanceDataframe.set_index('pos')
-        performanceDataframe.to_csv(result_dir + "performanceEvaluation.csv")
+        performanceDataframe.to_csv(result_dir + "relevanceEvaluation_stepsize=" + str(stepsize) + ".csv")
     else:
-        performanceDataframe = pd.read_csv(result_dir + "performanceEvaluation.csv")
+        performanceDataframe = pd.read_csv(result_dir + "relevanceEvaluation_stepsize=" + str(stepsize) + ".csv")
         performanceDataframe = performanceDataframe.set_index('pos')
 
     # plot results
@@ -136,7 +136,7 @@ def evaluateRelevance(origData, fairData, result_dir, qualAttr, stepsize, calcRe
               borderaxespad=0.)  # , labels=self.__groupNamesForPlots)
     ax.set_xlabel("ranking position")
     ax.set_ylabel("relevance score")
-    plt.savefig(result_dir + "relevanceEvaluation.png", dpi=100, bbox_inches='tight')
+    plt.savefig(result_dir + "relevanceEvaluation_stepsize=" + str(stepsize) + ".png", dpi=100, bbox_inches='tight')
 
 
 def evaluateFairness(data, groups, groupNames, result_dir, stepsize, calcResult=0):
@@ -160,9 +160,9 @@ def evaluateFairness(data, groups, groupNames, result_dir, stepsize, calcResult=
         colNames = ['pos'] + groupNames
         fairnessDataframe = pd.DataFrame(fairnessData, columns=colNames)
         fairnessDataframe = fairnessDataframe.set_index('pos')
-        fairnessDataframe.to_csv(result_dir + "fairnessEvaluation.csv")
+        fairnessDataframe.to_csv(result_dir + "fairnessEvaluation_stepsize=" + str(stepsize) + ".csv")
     else:
-        fairnessDataframe = pd.read_csv(result_dir + "fairnessEvaluation.csv")
+        fairnessDataframe = pd.read_csv(result_dir + "fairnessEvaluation_stepsize=" + str(stepsize) + ".csv")
         fairnessDataframe = fairnessDataframe.set_index('pos')
 
     # plot results
@@ -178,7 +178,7 @@ def evaluateFairness(data, groups, groupNames, result_dir, stepsize, calcResult=
     ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     ax.set_xlabel("ranking position")
     ax.set_ylabel("percentage")
-    plt.savefig(result_dir + "fairnessEvaluation.png", dpi=100, bbox_inches='tight')
+    plt.savefig(result_dir + "fairnessEvaluation_stepsize=" + str(stepsize) + ".png", dpi=100, bbox_inches='tight')
 
 
 def main():
@@ -278,13 +278,10 @@ def main():
         origData = origData.reset_index(drop=True)
 
         data = pd.read_csv(pathToCFAResult, sep=',')
-#         oldPosColumn = data.index.values
         fairSorting = data.sort_values(by=['fairScore', 'uuid'], ascending=[False, True])
-#         fairSorting['newPos'] = fairSorting.index
-#         fairSorting['oldPos'] = oldPosColumn
         fairSorting = fairSorting.reset_index(drop=True)
 
-        score_stepsize = 100
+        score_stepsize = 10
 
         evaluateRelevance(origData, fairSorting, result_dir, qualAttr, score_stepsize, calcResult=1)
         evaluateFairness(fairSorting, groups, groupNames, result_dir, score_stepsize, calcResult=1)
