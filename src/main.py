@@ -3,6 +3,7 @@ import numpy as np
 import argparse, os, math
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from time import process_time
 
 from data_preparation import synthetic, LSAT
 from visualization.plots import plotKDEPerGroup
@@ -72,7 +73,7 @@ def rerank_with_cfa(score_stepsize, thetas, result_dir, pathToData, pathToGroups
             "invalid number of thetas, should be {numThetas} Specify one theta per group.".format(numThetas=groups.shape[0]))
 
     regForOT = 5e-3
-
+    t = process_time()
     cfa = ContinuousFairnessAlgorithm(data,
                                       groups,
                                       group_names,
@@ -83,7 +84,10 @@ def rerank_with_cfa(score_stepsize, thetas, result_dir, pathToData, pathToGroups
                                       path=result_dir,
                                       plot=True)
     result = cfa.run()
+    elapsed_time = process_time() - t
     result.to_csv(result_dir + "resultData.csv")
+
+    print('running time: ' + str(elapsed_time), file=open(result_dir + "runtime.txt", "a"))
 
 
 def parseThetas(thetaString):
@@ -109,41 +113,35 @@ def ndcgPrep(fairData):
 
 
 def evaluateRelevance(origData, fairData, result_dir, qualAttr, stepsize, calcResult=0):
-    """
-    @param calcResult: if 1, result dataframe containing all measures is calculated, then stored to disk
-                       if 0, results are read from disk and only new plots are generated
-    """
 
-    if calcResult:
-        ndcgAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
-        precisionAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
-        kAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
-        index = 0
+    ndcgAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
+    precisionAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
+    kAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
+    index = 0
 
-        ndcgData = ndcgPrep(fairData)
-        pakOrigData, pakFairData = precisionAtKPrep(origData, fairData, qualAttr)
-        for k in range(0, fairData.shape[0], stepsize):
-            print(k)
-            # relevance measures
-            np.put(ndcgAtK,
-                   index,
-                   ndcg_score(ndcgData[qualAttr].values, ndcgData['fairScore'].values, k, gains="linear"))
-            np.put(precisionAtK,
-                   index,
-                   pak(k + 1, pakOrigData, pakFairData))
-            np.put(kAtK,
-                   index,
-                   k)
-            index += 1
+    ndcgData = ndcgPrep(fairData)
+    pakOrigData, pakFairData = precisionAtKPrep(origData, fairData, qualAttr)
+    for k in range(0, fairData.shape[0], stepsize):
+        print(k)
+        # relevance measures
+        np.put(ndcgAtK,
+               index,
+               ndcg_score(ndcgData[qualAttr].values, ndcgData['fairScore'].values, k, gains="linear"))
+        np.put(precisionAtK,
+               index,
+               pak(k + 1, pakOrigData, pakFairData))
+        np.put(kAtK,
+               index,
+               k)
+        index += 1
 
-        # save result to disk if wanna change plots later
-        performanceData = np.stack((kAtK, ndcgAtK, precisionAtK), axis=-1)
-        performanceDataframe = pd.DataFrame(performanceData, columns=['pos', 'ndcg', 'P$@$k'])
-        performanceDataframe = performanceDataframe.set_index('pos')
-        performanceDataframe.to_csv(result_dir + "relevanceEvaluation_stepsize=" + str(stepsize) + ".csv")
-    else:
-        performanceDataframe = pd.read_csv(result_dir + "relevanceEvaluation_stepsize=" + str(stepsize) + ".csv")
-        performanceDataframe = performanceDataframe.set_index('pos')
+    # save result to disk if wanna change plots later
+    performanceData = np.stack((kAtK, ndcgAtK, precisionAtK), axis=-1)
+    performanceDataframe = pd.DataFrame(performanceData, columns=['pos', 'ndcg', 'P$@$k'])
+    performanceDataframe = performanceDataframe.set_index('pos')
+    performanceDataframe.to_csv(result_dir + "relevanceEvaluation_stepsize=" + str(stepsize) + ".csv")
+    performanceDataframe = pd.read_csv(result_dir + "relevanceEvaluation_stepsize=" + str(stepsize) + ".csv")
+    performanceDataframe = performanceDataframe.set_index('pos')
 
     # plot results
     mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3,
@@ -164,31 +162,29 @@ def evaluateRelevance(origData, fairData, result_dir, qualAttr, stepsize, calcRe
     plt.savefig(result_dir + "relevanceEvaluation_stepsize=" + str(stepsize) + ".png", dpi=100, bbox_inches='tight')
 
 
-def evaluateFairness(data, groups, groupNames, result_dir, stepsize, calcResult=0):
+def evaluateFairness(data, groups, groupNames, result_dir, stepsize):
     """
     evaluates fairness of rankings resulting from cfa algorithm
     """
 
-    if calcResult:
-        index = 0
-        percAtK = np.empty(shape=(int(math.ceil(data.shape[0] / stepsize)), len(groups)))
-        kAtK = np.empty(int(math.ceil(data.shape[0] / stepsize)))
+    index = 0
+    percAtK = np.empty(shape=(int(math.ceil(data.shape[0] / stepsize)), len(groups)))
+    kAtK = np.empty(int(math.ceil(data.shape[0] / stepsize)))
+    data = ndcgPrep(data)
+    for k in range(0, data.shape[0], stepsize):
+        print(k)
+        percAtK[index] = groupPercentageAtK(data.head(k + 1), groups)
+        kAtK[index] = k
+        index += 1
 
-        for k in range(0, data.shape[0], stepsize):
-            print(k)
-            percAtK[index] = groupPercentageAtK(data.head(k + 1), groups)
-            kAtK[index] = k
-            index += 1
-
-        # save result to disk if wanna change plots later
-        fairnessData = np.c_[kAtK.T, percAtK]
-        colNames = ['pos'] + groupNames
-        fairnessDataframe = pd.DataFrame(fairnessData, columns=colNames)
-        fairnessDataframe = fairnessDataframe.set_index('pos')
-        fairnessDataframe.to_csv(result_dir + "fairnessEvaluation_stepsize=" + str(stepsize) + ".csv")
-    else:
-        fairnessDataframe = pd.read_csv(result_dir + "fairnessEvaluation_stepsize=" + str(stepsize) + ".csv")
-        fairnessDataframe = fairnessDataframe.set_index('pos')
+    # save result to disk if wanna change plots later
+    fairnessData = np.c_[kAtK.T, percAtK]
+    colNames = ['pos'] + groupNames
+    fairnessDataframe = pd.DataFrame(fairnessData, columns=colNames)
+    fairnessDataframe = fairnessDataframe.set_index('pos')
+    fairnessDataframe.to_csv(result_dir + "fairnessEvaluation_stepsize=" + str(stepsize) + ".csv")
+    fairnessDataframe = pd.read_csv(result_dir + "fairnessEvaluation_stepsize=" + str(stepsize) + ".csv")
+    fairnessDataframe = fairnessDataframe.set_index('pos')
 
     # plot results
     mpl.rcParams.update({'font.size': 24, 'lines.linewidth': 3,
@@ -301,10 +297,10 @@ def main():
         origData = pd.read_csv(pathToOrigData, sep=',')
         fairData = pd.read_csv(pathToCFAResult, sep=',')
 
-        score_stepsize = 10
+        score_stepsize = 1000
 
-        evaluateRelevance(origData, fairData, result_dir, qualAttr, score_stepsize, calcResult=1)
-        evaluateFairness(fairData, groups, groupNames, result_dir, score_stepsize, calcResult=1)
+        evaluateRelevance(origData, fairData, result_dir, qualAttr, score_stepsize)
+        evaluateFairness(fairData, groups, groupNames, result_dir, score_stepsize)
     else:
         parser.error("choose one command line option")
 
