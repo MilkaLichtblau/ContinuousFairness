@@ -73,7 +73,7 @@ class SyntheticDatasetCreator(object):
             attributeNamesAndCategories, size)
 
         # generate ID column with 128-bit integer IDs
-        self.__dataset['uuid'] = [uuid.uuid1().int >> 64
+        self.__dataset['uuid'] = [uuid.uuid4().int
                                   for _ in range(len(self.__dataset.index))]
 
     def sortByColumn(self, colName):

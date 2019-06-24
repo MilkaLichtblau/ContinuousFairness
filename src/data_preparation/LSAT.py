@@ -93,7 +93,7 @@ class LSATCreator():
 
         data = data[['race', 'LSAT', 'UGPA', 'ZFYA']]
         # add doc ids to identify documents later
-        data['uuid'] = [uuid.uuid1().int >> 64 for _ in range(len(data))]
+        data['uuid'] = [uuid.uuid4().int for _ in range(len(data))]
 
         self.__groups = pd.DataFrame({"race": [0, 1, 2, 3, 4, 5, 6, 7]})
         self.__dataset = data
