@@ -154,7 +154,7 @@ def evaluateRelevance(origData, fairData, result_dir, qualAttr, stepsize, calcRe
     ax = performanceDataframe.plot(y=['ndcg', 'P$@$k'],
                                    kind='line',
                                    use_index=True,
-                                   # yticks=np.arange(0.4, 1.1, 0.1),
+                                   yticks=np.arange(0.0, 1.1, 0.2),
                                    rot=45)
     ax.legend(bbox_to_anchor=(1.05, 1),
               loc=2,
@@ -301,7 +301,7 @@ def main():
         origData = pd.read_csv(pathToOrigData, sep=',')
         fairData = pd.read_csv(pathToCFAResult, sep=',')
 
-        score_stepsize = 1000
+        score_stepsize = 10
 
         evaluateRelevance(origData, fairData, result_dir, qualAttr, score_stepsize, calcResult=1)
         evaluateFairness(fairData, groups, groupNames, result_dir, score_stepsize, calcResult=1)
