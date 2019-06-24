@@ -20,8 +20,14 @@ def createSyntheticData(size):
     creator.sortByColumn('score')
     creator.writeToCSV('../data/synthetic/dataset.csv',
                        '../data/synthetic/groups.csv')
+    groupNames = {"[0 0]":"Group 1",
+                  "[0 1]":"Group 2",
+                  "[0 2]":"Group 3",
+                  "[1 0]":"Group 4",
+                  "[1 1]":"Group 5",
+                  "[1 2]":"Group 6"}
     plotKDEPerGroup(creator.dataset, creator.groups, 'score',
-                    '../data/synthetic/scoreDistributionPerGroup.png', '')
+                    '../data/synthetic/scoreDistributionPerGroup.png', groupNames)
 
 
 def createLSATDatasets():
@@ -86,6 +92,22 @@ def parseThetas(thetaString):
     return floatThetas
 
 
+def precisionAtKPrep(origData, fairData, qualAttr):
+    origSorting = origData.sort_values(by=[qualAttr, 'uuid'], ascending=[False, True])
+    origSorting = origSorting.reset_index(drop=True)
+
+    fairSorting = fairData.sort_values(by=['fairScore', 'uuid'], ascending=[False, True])
+    fairSorting = fairSorting.reset_index(drop=True)
+
+    return origSorting['uuid'].values, fairSorting['uuid'].values
+
+
+def ndcgPrep(fairData):
+    ndcgData = fairData.sort_values(by=['fairScore', 'uuid'], ascending=[False, True])
+    ndcgData = ndcgData.reset_index(drop=True)
+    return ndcgData
+
+
 def evaluateRelevance(origData, fairData, result_dir, qualAttr, stepsize, calcResult=0):
     """
     @param calcResult: if 1, result dataframe containing all measures is calculated, then stored to disk
@@ -97,15 +119,18 @@ def evaluateRelevance(origData, fairData, result_dir, qualAttr, stepsize, calcRe
         precisionAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
         kAtK = np.empty(int(math.ceil(fairData.shape[0] / stepsize)))
         index = 0
+
+        ndcgData = ndcgPrep(fairData)
+        pakOrigData, pakFairData = precisionAtKPrep(origData, fairData, qualAttr)
         for k in range(0, fairData.shape[0], stepsize):
             print(k)
             # relevance measures
             np.put(ndcgAtK,
                    index,
-                   ndcg_score(origData[qualAttr].values, fairData['fairScore'].values, k, gains="linear"))
+                   ndcg_score(ndcgData[qualAttr].values, ndcgData['fairScore'].values, k, gains="linear"))
             np.put(precisionAtK,
                    index,
-                   pak(k + 1, origData['uuid'].values, fairData['uuid'].values))
+                   pak(k + 1, pakOrigData, pakFairData))
             np.put(kAtK,
                    index,
                    k)
@@ -274,17 +299,12 @@ def main():
             groupNames = ["Male", "Female"]
 
         origData = pd.read_csv(pathToOrigData, sep=',')
-        origData = origData.sort_values(by=[qualAttr, 'uuid'], ascending=[False, True])
-        origData = origData.reset_index(drop=True)
+        fairData = pd.read_csv(pathToCFAResult, sep=',')
 
-        data = pd.read_csv(pathToCFAResult, sep=',')
-        fairSorting = data.sort_values(by=['fairScore', 'uuid'], ascending=[False, True])
-        fairSorting = fairSorting.reset_index(drop=True)
+        score_stepsize = 1000
 
-        score_stepsize = 10
-
-        evaluateRelevance(origData, fairSorting, result_dir, qualAttr, score_stepsize, calcResult=1)
-        evaluateFairness(fairSorting, groups, groupNames, result_dir, score_stepsize, calcResult=1)
+        evaluateRelevance(origData, fairData, result_dir, qualAttr, score_stepsize, calcResult=1)
+        evaluateFairness(fairData, groups, groupNames, result_dir, score_stepsize, calcResult=1)
     else:
         parser.error("choose one command line option")
 
