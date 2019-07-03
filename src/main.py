@@ -21,14 +21,19 @@ def createSyntheticData(size):
     creator.sortByColumn('score')
     creator.writeToCSV('../data/synthetic/dataset.csv',
                        '../data/synthetic/groups.csv')
-    groupNames = {"[0 0]":"Group 1",
-                  "[0 1]":"Group 2",
-                  "[0 2]":"Group 3",
-                  "[1 0]":"Group 4",
-                  "[1 1]":"Group 5",
-                  "[1 2]":"Group 6"}
+    groupNames = {"[0 0]":"Group [0 0]",
+                  "[0 1]":"Group [0 1]",
+                  "[0 2]":"Group [0 2]",
+                  "[1 0]":"Group [1 0]",
+                  "[1 1]":"Group [1 1]",
+                  "[1 2]":"Group [1 2]"}
     plotKDEPerGroup(creator.dataset, creator.groups, 'score',
                     '../data/synthetic/scoreDistributionPerGroup.png', groupNames)
+#     dataset = pd.read_csv('../data/synthetic/dataset.csv', sep=',')
+#     groups = pd.read_csv('../data/synthetic/groups.csv', sep=',')
+#
+#     plotKDEPerGroup(dataset, groups, 'score',
+#                     '../data/synthetic/scoreDistributionPerGroup.png', groupNames)
 
 
 def createLSATDatasets():
@@ -233,12 +238,12 @@ def main():
         thetas = parseThetas(args.run[2])
         result_dir = args.run[3]
         if args.run[0] == 'synthetic':
-            groupNames = {"[0 0]": "Group 1",
-                          "[0 1]": "Group 2",
-                          "[0 2]": "Group 3",
-                          "[1 0]": "Group 4",
-                          "[1 1]": "Group 5",
-                          "[1 2]": "Group 6"}
+            groupNames = {"[0 0]":"Group [0 0]",
+                          "[0 1]":"Group [0 1]",
+                          "[0 2]":"Group [0 2]",
+                          "[1 0]":"Group [1 0]",
+                          "[1 1]":"Group [1 1]",
+                          "[1 2]":"Group [1 2]"}
             rerank_with_cfa(score_stepsize,
                             thetas,
                             result_dir,
@@ -282,7 +287,7 @@ def main():
         if args.evaluate[0] == 'synthetic':
             qualAttr = 'score'
             groups = pd.read_csv('../data/synthetic/groups.csv', sep=',')
-            groupNames = ["Group 1", "Group 2", "Group 3", "Group 4", "Group 5", "Group 6"]
+            groupNames = ["Group [0 0]", "Group [0 1]", "Group [0 2]", "Group [1 0]", "Group [1 1]", "Group [1 2]"]
 
         if args.evaluate[0] == 'lsat_race':
             qualAttr = 'LSAT'
