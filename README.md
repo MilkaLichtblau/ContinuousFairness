@@ -23,6 +23,7 @@ During dataset prepararation a csv-file is created that contains information abo
 ### Run Algorithm 
 
 For each dataset the aforementioned group description csv file is needed. It is automatically generated during ``python3 main.py --create.``
+
 Running the CFA requires the following parameters: dataset name, the lowest and highest score value, the step size between two consecutive score values, a theta value for each group, and a path where the results are stored
 
 Examples for the synthetic dataset:
@@ -38,6 +39,7 @@ Example for LSAT with race as protected feature:
 
 ### Visualize Data and Results
 Evaluates relevance and fairness changes for a given experiment and plots the results. Relevance is evaluated in terms of NDCG and Precision@k. Fairness is evaluated in terms of percentage of protected candidates at position k.
+
 Running the evaluation requires the following terminal arguments: dataset name, path to original dataset (before post-processing with CFA), path to result dataset (after applying the CFA). The evaluation files are stored in the same directory as the result dataset.
 
 * ``python3 main.py --evaluate synthetic ../data/synthetic/dataset.csv ../data/synthetic/results/theta=0/resultData.csv``
