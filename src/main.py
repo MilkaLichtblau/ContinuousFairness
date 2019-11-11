@@ -218,14 +218,14 @@ def main():
                         help="creates datasets from raw data and writes them to disk")
     parser.add_argument("--run",
                         nargs=4,
-                        metavar=('DATASET', 'STEPSIZE', 'THETAS', 'DIRECTORY'),
-                        help="runs continuous fairness algorithm for given DATASET with \
+                        metavar=('DATASET NAME', 'STEPSIZE', 'THETAS', 'DIRECTORY'),
+                        help="runs continuous fairness algorithm for given DATASET NAME with \
                               STEPSIZE and THETAS and stores results into DIRECTORY")
     parser.add_argument("--evaluate",
                         nargs=3,
-                        metavar=('DATASET', 'PATH TO ORIG DATASET', 'RESULT DATASET'),
+                        metavar=('DATASET NAME', 'PATH TO ORIG DATASET', 'PATH TO RESULT DATASET'),
                         help="evaluates all experiments for respective dataset and \
-                              stores results into RESULT DIRECTORY")
+                              stores results into directory given in PATH TO RESULT DATASET")
 
     args = parser.parse_args()
 
