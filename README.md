@@ -1,5 +1,7 @@
 # Continuous Fairness Algorithm
 
+Implementation of the post-processing algorithm and experiments described in https://link.springer.com/article/10.1007/s10618-019-00658-8
+
 ## Dependencies
 python 3.6
 
@@ -39,5 +41,5 @@ Evaluates relevance and fairness changes for a given experiment and plots the re
 Running the evaluation requires the following terminal arguments: dataset name, path to original dataset (before post-processing with CFA), path to result dataset (after applying the CFA). The evaluation files are stored in the same directory as the result dataset.
 
 * ``python3 main.py --evaluate synthetic ../data/synthetic/dataset.csv ../data/synthetic/results/theta=0/resultData.csv``
-* ``python3 main.py --evaluate lsat_race ../data/LSAT/allRace/allEthnicityLSAT.csv ../data/LSAT/allRace/results/theta=0/resultData.csv
+* ``python3 main.py --evaluate lsat_race ../data/LSAT/allRace/allEthnicityLSAT.csv ../data/LSAT/allRace/results/theta=0/resultData.csv``
 * ``python3 main.py --evaluate lsat_gender ../data/LSAT/gender/genderLSAT.csv ../data/LSAT/gender/results/theta=0/resultData.csv``
