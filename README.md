@@ -16,7 +16,7 @@ The code supports two datasets so far (see main() in main.py):
 
 The synthetic dataset contains 2 protected feature columns and 1 score column. One protected feature is binary {0, 1}, the other is drawn from the set {0, 1, 2}, leading to a total of 6 groups (0 0), (0 1), (0 2) etc. The score feature represents the number, that would be calculated by a ranking function. Each group is assigned a in integer score within [1,100], drawn from a normal distribution with different means and standard-deviations per group (see data/synthetic/scoreDistributionPerGroup.png)
 
-The LSAT dataset (https://eric.ed.gov/?id=ED469370) has sex and race as protected features and LSAT, ZFYA and UGPA as protected features. Current experiments use LSAT as score feature. The current experimental configuration considers sex and race separately as protected features in two distinct experiments.
+The LSAT dataset (https://eric.ed.gov/?id=ED469370) has sex and race as protected features and LSAT, ZFYA and UGPA as non-protected features. Current experiments use LSAT as score feature. The current experimental configuration considers sex and race separately as protected features in two distinct experiments.
 
 During dataset prepararation a csv-file is created that contains information about the groups in the dataset. This file is needed by the actual CFA Algorithm, to apply the barycenter calculation to each group separately. 
 
